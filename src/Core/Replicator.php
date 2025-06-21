@@ -4,6 +4,8 @@ namespace Monsefrachid\MysqlReplication\Core;
 
 use Monsefrachid\MysqlReplication\Support\ShellRunner;
 use Monsefrachid\MysqlReplication\Services\ZfsSnapshotManager;
+use Monsefrachid\MysqlReplication\Services\JailManager;
+use Monsefrachid\MysqlReplication\Services\IocageJailDriver;
 
 /**
  * Class Replicator
@@ -70,6 +72,13 @@ class Replicator
     private ZfsSnapshotManager $zfs;
 
     /**
+     * Handles jail existence checks, destruction, and validation
+     *
+     * @var JailManager
+     */
+    private JailManager $jails;
+
+    /**
      * Constructor
      *
      * @param string $from Format: user@host:jailName
@@ -94,6 +103,9 @@ class Replicator
 
         $this->shell = new ShellRunner($this->dryRun);
         $this->zfs = new ZfsSnapshotManager($this->shell);
+        $this->jails = new JailManager(
+            new IocageJailDriver($this->shell)
+        );
     }
 
     /**
@@ -105,6 +117,17 @@ class Replicator
         echo 'Flags: force=' . ($this->force ? 'true' : 'false') .
             ', dryRun=' . ($this->dryRun ? 'true' : 'false') .
             ', skipTest=' . ($this->skipTest ? 'true' : 'false') . "\n";
+
+        // Step 0: Check for existing jail and destroy if --force is set
+        if ($this->jails->exists($this->replicaJail)) {
+            if ($this->force) {
+                echo "⚠️ [FORCE] Jail '{$this->replicaJail}' already exists. Destroying...\n";
+                $this->jails->destroy($this->replicaJail);
+            } else {
+                echo "❌ Jail '{$this->replicaJail}' already exists. Use --force to overwrite.\n";
+                exit(1);
+            }
+        }
 
         // Step 1: Create snapshot on remote source jail
         $snapshotSuffix = 'replica_' . date('YmdHis');
@@ -127,6 +150,8 @@ class Replicator
             $snapshot,
             $this->replicaJail
         );
+
+        $this->jails->assertRootExists($this->replicaJail);
 
         // Step 4: Jail config, cert copy, mysql setup (to be implemented)
         echo "\n✅ Snapshot transfer complete. Next: configure jail and MySQL.\n";
