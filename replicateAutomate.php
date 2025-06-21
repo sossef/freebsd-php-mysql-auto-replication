@@ -71,7 +71,7 @@ function getMasterStatus($remote, $sshKey) {
     $cmd = "ssh $sshKey $remote \"sudo iocage exec $sourceJail /usr/local/bin/mysql -e \\\"SHOW MASTER STATUS\\\\G\\\"\"";
     $out = shell_exec($cmd);
     if (!$out) throw new Exception("Failed to get master status output.");
-    if (!preg_match('/File:\s+(\S+)/', $out, $f) || !preg_match('/Position:\s+(\d+)/', $out, $p)) {
+    if (!preg_match('/File:\\s+(\\S+)/', $out, $f) || !preg_match('/Position:\\s+(\\d+)/', $out, $p)) {
         throw new Exception("Could not parse master status from output: \n$out");
     }
     return [$f[1], $p[1]];
@@ -178,4 +178,24 @@ if (!is_dir($replicaRoot)) {
 run("sudo iocage exec $replicaJail /usr/local/bin/mysql < /tmp/replica_setup.sql", "Configure replication on replica");
 @unlink("/tmp/replica_setup.sql");
 
+// End-to-End Replication Test
+echo "[STEP] Run end-to-end replication test...\n";
+
+$testInsert = <<<SQL
+CREATE DATABASE IF NOT EXISTS testdb;
+USE testdb;
+CREATE TABLE IF NOT EXISTS ping (msg VARCHAR(100));
+INSERT INTO ping (msg) VALUES ('replication check @ $date');
+SQL;
+
+$remoteInsertCmd = "echo \"$testInsert\" | ssh $sshKey $remote \"sudo iocage exec $sourceJail /usr/local/bin/mysql\"";
+run($remoteInsertCmd, "Insert test row on primary");
+sleep(4);
+$check = run("sudo iocage exec $replicaJail /usr/local/bin/mysql -e 'SELECT msg FROM testdb.ping ORDER BY msg DESC LIMIT 1'", "Check replicated row");
+if (!isset($check[1]) || !str_contains($check[1], 'replication check')) {
+    echo "[ERROR] Replication test failed. Test row not found in replica.\n";
+    exit(1);
+}
+
+echo "\n✅ End-to-end replication test passed.\n";
 echo "\n✅ Replica setup complete and replication initialized.\n";
