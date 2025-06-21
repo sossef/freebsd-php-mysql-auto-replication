@@ -1,0 +1,19 @@
+{
+    "name": "monsefrachid/mysql-replication",
+    "description": "Automated MySQL replication setup using FreeBSD jails and ZFS",
+    "type": "project",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Monsefrachid\\MysqlReplication\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Monsef Rachid",
+            "email": "monsef.r@gmail.com"
+        }
+    ],
+    "minimum-stability": "stable",
+    "require": {}
+}
