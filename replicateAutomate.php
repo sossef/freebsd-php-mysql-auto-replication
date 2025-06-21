@@ -23,12 +23,13 @@ function parseArgs() {
 }
 
 function run($cmd, $desc, $rollback = null) {
-    echo "[STEP] $desc...\n";
+    echo "⚙️ [STEP] $desc...\n";
+    echo "👉 [CMD] $cmd\n";
     exec($cmd, $output, $code);
     if ($code !== 0) {
-        echo "[ERROR] $desc failed.\n";
+        echo "❌ [ERROR] $desc failed.\n";
         if ($rollback) {
-            echo "[ROLLBACK] Executing rollback.\n";
+            echo "🌀 [ROLLBACK] Executing rollback.\n";
             exec($rollback);
         }
         exit(1);
@@ -69,9 +70,10 @@ function generateServerID() {
 function getMasterStatus($remote, $sshKey) {
     global $sourceJail;
     $cmd = "ssh $sshKey $remote \"sudo iocage exec $sourceJail /usr/local/bin/mysql -e \\\"SHOW MASTER STATUS\\\\G\\\"\"";
+    echo "👉 [CMD] $cmd\n";
     $out = shell_exec($cmd);
     if (!$out) throw new Exception("Failed to get master status output.");
-    if (!preg_match('/File:\\s+(\\S+)/', $out, $f) || !preg_match('/Position:\\s+(\\d+)/', $out, $p)) {
+    if (!preg_match('/File:\s+(\\S+)/', $out, $f) || !preg_match('/Position:\s+(\\d+)/', $out, $p)) {
         throw new Exception("Could not parse master status from output: \n$out");
     }
     return [$f[1], $p[1]];
@@ -92,7 +94,7 @@ run("ssh $sshKey $remote sudo zfs send -R tank/iocage/jails/$snapshot | sudo zfs
 
 $replicaRoot = "/tank/iocage/jails/$replicaJail/root";
 if (!is_dir($replicaRoot)) {
-    echo "[ERROR] Replica jail root '$replicaRoot' does not exist or is invalid. Aborting.\n";
+    echo "❌ [ERROR] Replica jail root '$replicaRoot' does not exist or is invalid. Aborting.\n";
     exec($rollbackCmd);
     exit(1);
 }
@@ -117,7 +119,7 @@ $status = is_string($statusRaw) ? trim($statusRaw) : "";
 if ($status !== "up") {
     run("sudo iocage start $replicaJail", "Start replica jail", $rollbackCmd);
 } else {
-    echo "[INFO] Jail '$replicaJail' is already running. Skipping start.\n";
+    echo "ℹ️ [INFO] Jail '$replicaJail' is already running. Skipping start.\n";
 }
 
 run("scp $sshKey $remote:/tmp/ssl_certs_primary/*.pem /tmp/", "Copy SSL certs from primary");
@@ -170,7 +172,7 @@ EOD;
 file_put_contents("/tmp/replica_setup.sql", $replicaSQL);
 
 if (!is_dir($replicaRoot)) {
-    echo "[ERROR] Replica jail root '$replicaRoot' does not exist or is invalid. Aborting.\n";
+    echo "❌ [ERROR] Replica jail root '$replicaRoot' does not exist or is invalid. Aborting.\n";
     exec($rollbackCmd);
     exit(1);
 }
@@ -179,7 +181,7 @@ run("sudo iocage exec $replicaJail /usr/local/bin/mysql < /tmp/replica_setup.sql
 @unlink("/tmp/replica_setup.sql");
 
 // End-to-End Replication Test
-echo "[STEP] Run end-to-end replication test...\n";
+echo "🔸 [STEP] Run end-to-end replication test...\n";
 
 $testInsert = <<<SQL
 CREATE DATABASE IF NOT EXISTS testdb;
@@ -193,7 +195,7 @@ run($remoteInsertCmd, "Insert test row on primary");
 sleep(4);
 $check = run("sudo iocage exec $replicaJail /usr/local/bin/mysql -e 'SELECT msg FROM testdb.ping ORDER BY msg DESC LIMIT 1'", "Check replicated row");
 if (!isset($check[1]) || !str_contains($check[1], 'replication check')) {
-    echo "[ERROR] Replication test failed. Test row not found in replica.\n";
+    echo "❌ [ERROR] Replication test failed. Test row not found in replica.\n";
     exit(1);
 }
 
