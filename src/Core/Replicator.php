@@ -8,6 +8,7 @@ use Monsefrachid\MysqlReplication\Services\JailManager;
 use Monsefrachid\MysqlReplication\Services\IocageJailDriver;
 use Monsefrachid\MysqlReplication\Services\JailConfigurator;
 use Monsefrachid\MysqlReplication\Services\CertManager;
+use Monsefrachid\MysqlReplication\Services\MySqlConfigurator;
 
 /**
  * Class Replicator
@@ -102,6 +103,14 @@ class Replicator
     private CertManager $certs;
 
     /**
+     * Configures my.cnf and restarts MySQL in the replica jail.
+     *
+     * @var MySqlConfigurator
+     */
+    private MySqlConfigurator $mysql;
+
+
+    /**
      * Constructor
      *
      * @param string $from Format: user@host:jailName
@@ -132,6 +141,7 @@ class Replicator
         $this->jails = new JailManager(new IocageJailDriver($this->shell));
         $this->configurator = new JailConfigurator($this->shell);
         $this->certs = new CertManager($this->shell, $this->sshKey);
+        $this->mysql = new MySqlConfigurator($this->shell, $this->sshKey);
     }
 
     /**
@@ -186,6 +196,9 @@ class Replicator
         // Step 6: Transfer SSL certs from primary jail to replica
         $this->certs->transferCerts($this->from, $this->sourceJail, $this->replicaJail);
 
-        echo "\n✅ Jail config and certs complete.\n";
+        // Step 7: Configure replica's my.cnf and restart MySQL
+        $this->mysql->configure($this->from, $this->sourceJail, $this->replicaJail);
+
+        echo "\n✅ Jail network, certs, and MySQL configuration complete.\n";
     }
 }
