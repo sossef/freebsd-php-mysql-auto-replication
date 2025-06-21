@@ -5,26 +5,28 @@
  * MySQL Replica Automation Script using ZFS Snapshots (FreeBSD)
  *
  * Usage:
- *   ./replicateAutomate.php --from user@primaryHost:primaryJail --to localhost:newReplicaJailName [--force]
+ *   ./replicateAutomate.php --from user@primaryHost:primaryJail --to localhost:newReplicaJailName [--force] [--dry-run]
  */
 
 function parseArgs() {
     global $argv;
-    $args = getopt("", ["from:", "to:", "force"]);
+    $args = getopt("", ["from:", "to:", "force", "dry-run"]);
     if (!$args || !isset($args['from']) || !isset($args['to'])) {
-        fwrite(STDERR, "Usage: ./replicateAutomate.php --from user@host:jailName --to localhost:replicaJailName [--force]\n");
+        fwrite(STDERR, "Usage: ./replicateAutomate.php --from user@host:jailName --to localhost:replicaJailName [--force] [--dry-run]\n");
         exit(1);
     }
 
     list($fromUserHost, $fromJail) = explode(':', $args['from']);
     list($toHost, $toJail) = explode(':', $args['to']);
 
-    return [$fromUserHost, $fromJail, $toJail, isset($args['force'])];
+    return [$fromUserHost, $fromJail, $toJail, isset($args['force']), isset($args['dry-run'])];
 }
 
 function run($cmd, $desc, $rollback = null) {
+    global $dryRun;
     echo "⚙️ [STEP] $desc...\n";
     echo "🔍 [CMD] $cmd\n";
+    if ($dryRun) return ["[DRY-RUN] Command not executed."];
     exec($cmd, $output, $code);
     if ($code !== 0) {
         echo "❌ [ERROR] $desc failed.\n";
@@ -79,7 +81,7 @@ function getMasterStatus($remote, $sshKey) {
     return [$f[1], $p[1]];
 }
 
-list($remote, $sourceJail, $replicaJail, $force) = parseArgs();
+list($remote, $sourceJail, $replicaJail, $force, $dryRun) = parseArgs();
 $sshKey = "-i ~/.ssh/id_digitalocean";
 $date = date("YmdHis");
 $snapshot = "$sourceJail@replica_$date";
