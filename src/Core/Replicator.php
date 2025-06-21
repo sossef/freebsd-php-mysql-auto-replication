@@ -38,6 +38,13 @@ class Replicator
     private string $replicaJail;
 
     /**
+     * SSH identity key to use with remote commands (e.g. -i ~/.ssh/id_digitalocean)
+     *
+     * @var string
+     */
+    private string $sshKey;
+
+    /**
      * Whether to force overwrite if the replica jail already exists
      *
      * @var bool
@@ -86,7 +93,6 @@ class Replicator
      */
     private JailConfigurator $configurator;
 
-
     /**
      * Constructor
      *
@@ -95,13 +101,15 @@ class Replicator
      * @param bool $force
      * @param bool $dryRun
      * @param bool $skipTest
+     * @param string $sshKey Optional SSH key argument to use with remote connections
      */
     public function __construct(
         string $from,
         string $to,
         bool $force = false,
         bool $dryRun = false,
-        bool $skipTest = false
+        bool $skipTest = false,
+        string $sshKey = '-i ~/.ssh/id_digitalocean'
     ) {
         [$this->from, $this->sourceJail] = explode(':', $from);
         [, $this->replicaJail] = explode(':', $to);
@@ -109,12 +117,11 @@ class Replicator
         $this->force = $force;
         $this->dryRun = $dryRun;
         $this->skipTest = $skipTest;
+        $this->sshKey = $sshKey;
 
         $this->shell = new ShellRunner($this->dryRun);
-        $this->zfs = new ZfsSnapshotManager($this->shell);
-        $this->jails = new JailManager(
-            new IocageJailDriver($this->shell)
-        );
+        $this->zfs = new ZfsSnapshotManager($this->shell, $this->sshKey);
+        $this->jails = new JailManager(new IocageJailDriver($this->shell));
         $this->configurator = new JailConfigurator();
     }
 

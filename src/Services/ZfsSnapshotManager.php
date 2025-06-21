@@ -19,13 +19,22 @@ class ZfsSnapshotManager
     private ShellRunner $shell;
 
     /**
+     * SSH identity key to use with remote commands
+     *
+     * @var string
+     */
+    private string $sshKey;
+
+    /**
      * Constructor
      *
      * @param ShellRunner $shell
+     * @param string $sshKey
      */
-    public function __construct(ShellRunner $shell)
+    public function __construct(ShellRunner $shell, string $sshKey)
     {
         $this->shell = $shell;
+        $this->sshKey = $sshKey;
     }
 
     /**
@@ -41,7 +50,7 @@ class ZfsSnapshotManager
     {
         $snapshot = "{$jailName}@{$snapshotSuffix}";
         $this->shell->run(
-            "ssh {$remote} sudo zfs snapshot -r tank/iocage/jails/{$snapshot}",
+            "ssh {$this->sshKey} {$remote} sudo zfs snapshot -r tank/iocage/jails/{$snapshot}",
             "Create remote ZFS snapshot: {$snapshot}"
         );
         return $snapshot;
@@ -58,7 +67,7 @@ class ZfsSnapshotManager
     public function verifyRemoteSnapshot(string $remote, string $snapshotSuffix): void
     {
         $this->shell->run(
-            "ssh {$remote} zfs list -t snapshot | grep {$snapshotSuffix}",
+            "ssh {$this->sshKey} {$remote} zfs list -t snapshot | grep {$snapshotSuffix}",
             "Verify remote snapshot exists"
         );
     }
@@ -75,7 +84,7 @@ class ZfsSnapshotManager
     public function sendSnapshotToLocal(string $remote, string $snapshot, string $targetJailName): void
     {
         $this->shell->run(
-            "ssh {$remote} sudo zfs send -R tank/iocage/jails/{$snapshot} | sudo zfs recv -F tank/iocage/jails/{$targetJailName}",
+            "ssh {$this->sshKey} {$remote} sudo zfs send -R tank/iocage/jails/{$snapshot} | sudo zfs recv -F tank/iocage/jails/{$targetJailName}",
             "Send and receive ZFS snapshot for jail '{$targetJailName}'",
             "Failed to ZFS receive replica"
         );
