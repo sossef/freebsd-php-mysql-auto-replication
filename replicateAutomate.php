@@ -5,21 +5,21 @@
  * MySQL Replica Automation Script using ZFS Snapshots (FreeBSD)
  *
  * Usage:
- *   ./replicateAutomate.php --from user@primaryHost:primaryJail --to localhost:newReplicaJailName [--force] [--dry-run]
+ *   ./replicateAutomate.php --from user@primaryHost:primaryJail --to localhost:newReplicaJailName [--force] [--dry-run] [--skip-test]
  */
 
 function parseArgs() {
     global $argv;
-    $args = getopt("", ["from:", "to:", "force", "dry-run"]);
+    $args = getopt("", ["from:", "to:", "force", "dry-run", "skip-test"]);
     if (!$args || !isset($args['from']) || !isset($args['to'])) {
-        fwrite(STDERR, "Usage: ./replicateAutomate.php --from user@host:jailName --to localhost:replicaJailName [--force] [--dry-run]\n");
+        fwrite(STDERR, "Usage: ./replicateAutomate.php --from user@host:jailName --to localhost:replicaJailName [--force] [--dry-run] [--skip-test]\n");
         exit(1);
     }
 
     list($fromUserHost, $fromJail) = explode(':', $args['from']);
     list($toHost, $toJail) = explode(':', $args['to']);
 
-    return [$fromUserHost, $fromJail, $toJail, isset($args['force']), isset($args['dry-run'])];
+    return [$fromUserHost, $fromJail, $toJail, isset($args['force']), isset($args['dry-run']), isset($args['skip-test'])];
 }
 
 function run($cmd, $desc, $rollback = null) {
@@ -45,7 +45,7 @@ function generateReplicaIP() {
         $content = file_get_contents($file);
         $cfg = json_decode($content, true);
         if (!$cfg || !is_array($cfg)) continue;
-        if (isset($cfg['ip4_addr']) && is_string($cfg['ip4_addr']) && preg_match("/10\\.0\\.0\\.(\d+)/", $cfg['ip4_addr'], $m)) {
+        if (isset($cfg['ip4_addr']) && is_string($cfg['ip4_addr']) && strpos($cfg['ip4_addr'], '10.0.0.') !== false && preg_match("/10\\.0\\.0\\.(\\d+)/", $cfg['ip4_addr'], $m)) {
             $used[] = (int)$m[1];
         }
     }
@@ -59,7 +59,7 @@ function generateServerID() {
     $ids = [];
     foreach (glob("/tank/iocage/jails/*/root/usr/local/etc/mysql/my.cnf") as $file) {
         $content = file_get_contents($file);
-        if (preg_match("/server-id\\s*=\\s*(\d+)/", $content, $m)) {
+        if (preg_match("/server-id\\s*=\\s*(\\d+)/", $content, $m)) {
             $ids[] = (int)$m[1];
         }
     }
@@ -81,15 +81,16 @@ function getMasterStatus($remote, $sshKey) {
     return [$f[1], $p[1]];
 }
 
-list($remote, $sourceJail, $replicaJail, $force, $dryRun) = parseArgs();
+list($remote, $sourceJail, $replicaJail, $force, $dryRun, $skipTest) = parseArgs();
 $sshKey = "-i ~/.ssh/id_digitalocean";
 $date = date("YmdHis");
 $snapshot = "$sourceJail@replica_$date";
 $remoteHostOnly = preg_replace('/^.*@/', '', $remote);
 
-// Handle --force logic
 $checkCmd = "sudo iocage list -H -q | awk '{print \$1}' | grep -w ^$replicaJail$";
-$existing = trim(shell_exec($checkCmd));
+$raw = shell_exec($checkCmd);
+$existing = is_string($raw) ? trim($raw) : '';
+
 if ($existing) {
     if ($force) {
         echo "⚠️ [FORCE] Replica jail '$replicaJail' exists. Stopping and destroying it...\n";
@@ -186,28 +187,30 @@ SHOW REPLICA STATUS\G;
 EOD;
 
 file_put_contents("/tmp/replica_setup.sql", $replicaSQL);
-
 run("sudo iocage exec $replicaJail /usr/local/bin/mysql < /tmp/replica_setup.sql", "Configure replication on replica");
 @unlink("/tmp/replica_setup.sql");
 
-// End-to-End Replication Test
-echo "🔸 [STEP] Run end-to-end replication test...\n";
+if (!$skipTest) {
+    echo "🔸 [STEP] Run end-to-end replication test...\n";
 
-$testInsert = <<<SQL
+    $testInsert = <<<SQL
 CREATE DATABASE IF NOT EXISTS testdb;
 USE testdb;
 CREATE TABLE IF NOT EXISTS ping (msg VARCHAR(100));
 INSERT INTO ping (msg) VALUES ('replication check @ $date');
 SQL;
 
-$remoteInsertCmd = "echo \"$testInsert\" | ssh $sshKey $remote \"sudo iocage exec $sourceJail /usr/local/bin/mysql\"";
-run($remoteInsertCmd, "Insert test row on primary");
-sleep(4);
-$check = run("sudo iocage exec $replicaJail /usr/local/bin/mysql -e 'SELECT msg FROM testdb.ping ORDER BY msg DESC LIMIT 1'", "Check replicated row");
-if (!isset($check[1]) || !str_contains($check[1], 'replication check')) {
-    echo "❌ [ERROR] Replication test failed. Test row not found in replica.\n";
-    exit(1);
+    $remoteInsertCmd = "echo \"$testInsert\" | ssh $sshKey $remote \"sudo iocage exec $sourceJail /usr/local/bin/mysql\"";
+    run($remoteInsertCmd, "Insert test row on primary");
+    sleep(4);
+    $check = run("sudo iocage exec $replicaJail /usr/local/bin/mysql -e 'SELECT msg FROM testdb.ping ORDER BY msg DESC LIMIT 1'", "Check replicated row");
+    if (!isset($check[1]) || !str_contains($check[1], 'replication check')) {
+        echo "❌ [ERROR] Replication test failed. Test row not found in replica.\n";
+        exit(1);
+    }
+    echo "\n✅ End-to-end replication test passed.\n";
+} else {
+    echo "⚠️ [SKIP] End-to-end replication test was skipped due to --skip-test flag.\n";
 }
 
-echo "\n✅ End-to-end replication test passed.\n";
 echo "\n✅ Replica setup complete and replication initialized.\n";
