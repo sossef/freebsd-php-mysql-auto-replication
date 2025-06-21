@@ -132,4 +132,43 @@ class MySqlConfigurator
 
         throw new RuntimeException("No available server-id between 2–99");
     }
+
+    /**
+     * Retrieve the current binary log file and position from the source MySQL server.
+     *
+     * @param string $remote The SSH user@host of the source server
+     * @param string $sourceJail The source jail name running MySQL
+     * @return array An array with [logFile, logPos]
+     */
+    public function getMasterStatus(string $remote, string $sourceJail): array
+    {
+        echo "⚙️ [STEP] Fetch MySQL binary log file and position from primary...\n";
+
+        $cmd = "ssh {$this->sshKey} {$remote} \"sudo iocage exec {$sourceJail} /usr/local/bin/mysql -e 'SHOW MASTER STATUS\\G'\"";
+        $output = shell_exec($cmd);
+
+        if (!$output) {
+            throw new \RuntimeException("Failed to retrieve master status from source MySQL server.");
+        }
+
+        $logFile = null;
+        $logPos = null;
+
+        foreach (explode("\n", $output) as $line) {
+            if (str_starts_with(trim($line), 'File:')) {
+                $logFile = trim(explode(':', $line, 2)[1]);
+            }
+            if (str_starts_with(trim($line), 'Position:')) {
+                $logPos = (int) trim(explode(':', $line, 2)[1]);
+            }
+        }
+
+        if (!$logFile || !$logPos) {
+            throw new \RuntimeException("Could not parse log file and position from master status output.");
+        }
+
+        echo "🔢 Binlog: {$logFile}, Position: {$logPos}\n";
+
+        return [$logFile, $logPos];
+    }
 }
