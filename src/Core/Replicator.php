@@ -122,7 +122,7 @@ class Replicator
         $this->shell = new ShellRunner($this->dryRun);
         $this->zfs = new ZfsSnapshotManager($this->shell, $this->sshKey);
         $this->jails = new JailManager(new IocageJailDriver($this->shell));
-        $this->configurator = new JailConfigurator();
+        $this->configurator = new JailConfigurator($this->shell);
     }
 
     /**

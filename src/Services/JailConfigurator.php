@@ -2,6 +2,7 @@
 
 namespace Monsefrachid\MysqlReplication\Services;
 
+use Monsefrachid\MysqlReplication\Support\ShellRunner;
 use RuntimeException;
 
 /**
@@ -12,6 +13,19 @@ use RuntimeException;
 class JailConfigurator
 {
     /**
+     * @var ShellRunner
+     */
+    private ShellRunner $shell;
+
+    /**
+     * @param ShellRunner $shell
+     */
+    public function __construct(ShellRunner $shell)
+    {
+        $this->shell = $shell;
+    }
+
+    /**
      * Assign a free IP in the range and update jail config.
      *
      * @param string $jailName
@@ -20,6 +34,11 @@ class JailConfigurator
     public function configure(string $jailName): void
     {
         $configPath = "/tank/iocage/jails/{$jailName}/config.json";
+
+        if ($this->shell->isDryRun()) {
+            echo "⚠️ [DRY-RUN] Skipping jail config update: {$configPath}\n";
+            return;
+        }
 
         if (!file_exists($configPath)) {
             throw new RuntimeException("Jail config not found: {$configPath}");
