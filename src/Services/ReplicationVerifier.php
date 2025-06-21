@@ -8,15 +8,16 @@ use RuntimeException;
 class ReplicationVerifier
 {
     private ShellRunner $shell;
+    private string $sshKey;
+    private bool $dryRun;
 
-    public function __construct(ShellRunner $shell)
+    public function __construct(ShellRunner $shell, string $sshKey = '', bool $dryRun = false)
     {
         $this->shell = $shell;
+        $this->sshKey = $sshKey;
+        $this->dryRun = $dryRun;
     }
 
-    /**
-     * Configure MySQL replication & optionally run a test.
-     */
     public function verify(
         string $remoteHostOnly,
         string $sourceJail,
@@ -25,6 +26,12 @@ class ReplicationVerifier
         int $logPos,
         bool $skipTest = false
     ): void {
+        if ($this->dryRun) {
+            echo "🔇 [DRY-RUN] Skipping replication setup and verification.\n";
+            return;
+        }
+
+        // Replication setup
         $sql = <<<SQL
 STOP REPLICA;
 RESET REPLICA ALL;
@@ -64,7 +71,7 @@ CREATE TABLE IF NOT EXISTS ping (msg VARCHAR(100));
 INSERT INTO ping (msg) VALUES ('replication check @ $date');
 SQL;
 
-        $insertCmd = "echo \"$testInsert\" | ssh -i ~/.ssh/id_digitalocean {$remoteHostOnly} \"sudo iocage exec {$sourceJail} /usr/local/bin/mysql\"";
+        $insertCmd = "echo \"$testInsert\" | ssh {$this->sshKey} {$remoteHostOnly} \"sudo iocage exec {$sourceJail} /usr/local/bin/mysql\"";
         $this->shell->run($insertCmd, "Insert test row on primary");
 
         sleep(4);
