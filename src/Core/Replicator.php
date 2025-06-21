@@ -3,6 +3,7 @@
 namespace Monsefrachid\MysqlReplication\Core;
 
 use Monsefrachid\MysqlReplication\Support\ShellRunner;
+use Monsefrachid\MysqlReplication\Services\ZfsSnapshotManager;
 
 /**
  * Class Replicator
@@ -62,6 +63,13 @@ class Replicator
     private ShellRunner $shell;
 
     /**
+     * Handles ZFS snapshot operations
+     *
+     * @var ZfsSnapshotManager
+     */
+    private ZfsSnapshotManager $zfs;
+
+    /**
      * Constructor
      *
      * @param string $from Format: user@host:jailName
@@ -85,6 +93,7 @@ class Replicator
         $this->skipTest = $skipTest;
 
         $this->shell = new ShellRunner($this->dryRun);
+        $this->zfs = new ZfsSnapshotManager($this->shell);
     }
 
     /**
@@ -97,7 +106,29 @@ class Replicator
             ', dryRun=' . ($this->dryRun ? 'true' : 'false') .
             ', skipTest=' . ($this->skipTest ? 'true' : 'false') . "\n";
 
-        // Test shell execution with dry-run support
-        $this->shell->run("echo 'ShellRunner test'", 'Test shell runner execution');
+        // Step 1: Create snapshot on remote source jail
+        $snapshotSuffix = 'replica_' . date('YmdHis');
+
+        $snapshot = $this->zfs->createRemoteSnapshot(
+            $this->from,
+            $this->sourceJail,
+            $snapshotSuffix
+        );
+
+        // Step 2: Verify snapshot exists
+        $this->zfs->verifyRemoteSnapshot(
+            $this->from,
+            $snapshotSuffix
+        );
+
+        // Step 3: Transfer snapshot to local and create new jail dataset
+        $this->zfs->sendSnapshotToLocal(
+            $this->from,
+            $snapshot,
+            $this->replicaJail
+        );
+
+        // Step 4: Jail config, cert copy, mysql setup (to be implemented)
+        echo "\n✅ Snapshot transfer complete. Next: configure jail and MySQL.\n";
     }
 }
