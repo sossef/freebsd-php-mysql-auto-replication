@@ -2,6 +2,8 @@
 
 namespace Monsefrachid\MysqlReplication\Core;
 
+use Monsefrachid\MysqlReplication\Support\ShellRunner;
+
 /**
  * Class Replicator
  *
@@ -10,23 +12,54 @@ namespace Monsefrachid\MysqlReplication\Core;
  */
 class Replicator
 {
-    /** @var string SSH user@host of the source jail */
+    /**
+     * SSH user@host of the source jail (e.g., "user@192.168.1.10")
+     *
+     * @var string
+     */
     private string $from;
 
-    /** @var string Jail name of the source */
+    /**
+     * Jail name of the source (e.g., "mysql_jail_primary")
+     *
+     * @var string
+     */
     private string $sourceJail;
 
-    /** @var string Jail name of the replica to create */
+    /**
+     * Jail name of the replica to create (e.g., "mysql_jail_replica")
+     *
+     * @var string
+     */
     private string $replicaJail;
 
-    /** @var bool Whether to force overwrite an existing jail */
+    /**
+     * Whether to force overwrite if the replica jail already exists
+     *
+     * @var bool
+     */
     private bool $force;
 
-    /** @var bool Whether to simulate execution without making changes */
+    /**
+     * Whether to simulate execution without actually running commands
+     *
+     * @var bool
+     */
     private bool $dryRun;
 
-    /** @var bool Whether to skip replication test at the end */
+    /**
+     * Whether to skip the end-to-end replication test after setup
+     *
+     * @var bool
+     */
     private bool $skipTest;
+
+    /**
+     * Handles shell command execution
+     *
+     * @var ShellRunner
+     */
+    private ShellRunner $shell;
 
     /**
      * Constructor
@@ -50,6 +83,8 @@ class Replicator
         $this->force = $force;
         $this->dryRun = $dryRun;
         $this->skipTest = $skipTest;
+
+        $this->shell = new ShellRunner($this->dryRun);
     }
 
     /**
@@ -57,11 +92,12 @@ class Replicator
      */
     public function run(): void
     {
-        echo "🛠️ Running replication from '{$this->from}:{$this->sourceJail}' to '{$this->replicaJail}'\n";
-        echo "Flags: force=" . ($this->force ? "true" : "false") .
-             ", dryRun=" . ($this->dryRun ? "true" : "false") .
-             ", skipTest=" . ($this->skipTest ? "true" : "false") . "\n";
+        echo "\n🛠️ Running replication from '{$this->from}:{$this->sourceJail}' to '{$this->replicaJail}'\n";
+        echo 'Flags: force=' . ($this->force ? 'true' : 'false') .
+            ', dryRun=' . ($this->dryRun ? 'true' : 'false') .
+            ', skipTest=' . ($this->skipTest ? 'true' : 'false') . "\n";
 
-        // Future implementation
+        // Test shell execution with dry-run support
+        $this->shell->run("echo 'ShellRunner test'", 'Test shell runner execution');
     }
 }
