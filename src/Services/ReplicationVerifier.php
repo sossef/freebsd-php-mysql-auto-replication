@@ -2,7 +2,7 @@
 
 namespace Monsefrachid\MysqlReplication\Services;
 
-use Monsefrachid\MysqlReplication\Services\ShellRunner;
+use Monsefrachid\MysqlReplication\Support\ShellRunner;
 use RuntimeException;
 
 class ReplicationVerifier
