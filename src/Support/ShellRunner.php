@@ -43,7 +43,7 @@ class ShellRunner
     public function run(string $cmd, ?string $desc = null, ?string $onError = null): array
     {
         if ($desc) {
-            echo "⚙️  [STEP] {$desc}\n";
+            echo "\n⚙️ [STEP] {$desc} \n";
         }
 
         echo "➡️ [CMD] {$cmd}\n";
@@ -78,5 +78,15 @@ class ShellRunner
         }
 
         return shell_exec($cmd);
+    }
+
+    /**
+     * Check if dry-run mode is enabled.
+     *
+     * @return bool True if dry-run mode is active, false otherwise
+     */
+    public function isDryRun(): bool
+    {
+        return $this->dryRun;
     }
 }

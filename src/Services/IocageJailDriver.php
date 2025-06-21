@@ -58,6 +58,12 @@ class IocageJailDriver implements JailDriverInterface
     {
         $rootPath = "/tank/iocage/jails/{$jailName}/root";
 
+        // 🛡 Skip check if dry-run is enabled
+        if ($this->shell->isDryRun()) {
+            echo "⚠️ [DRY-RUN] Skipping jail root existence check: {$rootPath}\n";
+            return;
+        }
+
         if (!is_dir($rootPath)) {
             throw new RuntimeException("❌ Jail root '{$rootPath}' does not exist after snapshot transfer.");
         }
