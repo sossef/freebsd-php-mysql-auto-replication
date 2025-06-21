@@ -7,6 +7,7 @@ use Monsefrachid\MysqlReplication\Services\ZfsSnapshotManager;
 use Monsefrachid\MysqlReplication\Services\JailManager;
 use Monsefrachid\MysqlReplication\Services\IocageJailDriver;
 use Monsefrachid\MysqlReplication\Services\JailConfigurator;
+use Monsefrachid\MysqlReplication\Services\CertManager;
 
 /**
  * Class Replicator
@@ -94,6 +95,13 @@ class Replicator
     private JailConfigurator $configurator;
 
     /**
+     * Transfers SSL certs from remote source jail to replica.
+     *
+     * @var CertManager
+     */
+    private CertManager $certs;
+
+    /**
      * Constructor
      *
      * @param string $from Format: user@host:jailName
@@ -123,6 +131,7 @@ class Replicator
         $this->zfs = new ZfsSnapshotManager($this->shell, $this->sshKey);
         $this->jails = new JailManager(new IocageJailDriver($this->shell));
         $this->configurator = new JailConfigurator($this->shell);
+        $this->certs = new CertManager($this->shell, $this->sshKey);
     }
 
     /**
@@ -171,9 +180,12 @@ class Replicator
         // Step 4: Ensure jail root exists
         $this->jails->assertRootExists($this->replicaJail);
 
-        // Step 5: Configure replica jail
+        // Step 5: Configure replica jail (IP, boot flags, hostname, etc.)
         $this->configurator->configure($this->replicaJail);
 
-        echo "\n✅ Jail config updated. Next: MySQL certs and replication config.\n";
+        // Step 6: Transfer SSL certs from primary jail to replica
+        $this->certs->transferCerts($this->from, $this->sourceJail, $this->replicaJail);
+
+        echo "\n✅ Jail config and certs complete.\n";
     }
 }
