@@ -8,7 +8,8 @@
  *   ./replicateAutomate.php --from user@primaryHost:primaryJail --to localhost:newReplicaJailName [--force] [--dry-run] [--skip-test]
  */
 
-function parseArgs() {
+function parseArgs()
+{
     global $argv;
     $args = getopt("", ["from:", "to:", "force", "dry-run", "skip-test"]);
     if (!$args || !isset($args['from']) || !isset($args['to'])) {
@@ -22,11 +23,14 @@ function parseArgs() {
     return [$fromUserHost, $fromJail, $toJail, isset($args['force']), isset($args['dry-run']), isset($args['skip-test'])];
 }
 
-function run($cmd, $desc, $rollback = null) {
+function run($cmd, $desc, $rollback = null)
+{
     global $dryRun;
     echo "⚙️ [STEP] $desc...\n";
     echo "🔍 [CMD] $cmd\n";
-    if ($dryRun) return ["[DRY-RUN] Command not executed."];
+    if ($dryRun) {
+        return ["[DRY-RUN] Command not executed."];
+    }
     exec($cmd, $output, $code);
     if ($code !== 0) {
         echo "❌ [ERROR] $desc failed.\n";
@@ -39,23 +43,29 @@ function run($cmd, $desc, $rollback = null) {
     return $output;
 }
 
-function generateReplicaIP() {
+function generateReplicaIP()
+{
     $used = [];
     foreach (glob("/tank/iocage/jails/*/config.json") as $file) {
         $content = file_get_contents($file);
         $cfg = json_decode($content, true);
-        if (!$cfg || !is_array($cfg)) continue;
+        if (!$cfg || !is_array($cfg)) {
+            continue;
+        }
         if (isset($cfg['ip4_addr']) && is_string($cfg['ip4_addr']) && strpos($cfg['ip4_addr'], '10.0.0.') !== false && preg_match("/10\\.0\\.0\\.(\\d+)/", $cfg['ip4_addr'], $m)) {
             $used[] = (int)$m[1];
         }
     }
     for ($i = 2; $i < 254; $i++) {
-        if (!in_array($i, $used)) return "lo1|10.0.0.$i/24";
+        if (!in_array($i, $used)) {
+            return "lo1|10.0.0.$i/24";
+        }
     }
     throw new Exception("No available IP address for jail.");
 }
 
-function generateServerID() {
+function generateServerID()
+{
     $ids = [];
     foreach (glob("/tank/iocage/jails/*/root/usr/local/etc/mysql/my.cnf") as $file) {
         $content = file_get_contents($file);
@@ -64,17 +74,22 @@ function generateServerID() {
         }
     }
     for ($i = 2; $i < 100; $i++) {
-        if (!in_array($i, $ids)) return $i;
+        if (!in_array($i, $ids)) {
+            return $i;
+        }
     }
     throw new Exception("No available server-id found.");
 }
 
-function getMasterStatus($remote, $sshKey) {
+function getMasterStatus($remote, $sshKey)
+{
     global $sourceJail;
     $cmd = "ssh $sshKey $remote \"sudo iocage exec $sourceJail /usr/local/bin/mysql -e \\\"SHOW MASTER STATUS\\\\G\\\"\"";
     echo "🔍 [CMD] $cmd\n";
     $out = shell_exec($cmd);
-    if (!$out) throw new Exception("Failed to get master status output.");
+    if (!$out) {
+        throw new Exception("Failed to get master status output.");
+    }
     if (!preg_match('/File:\s+(\\S+)/', $out, $f) || !preg_match('/Position:\s+(\\d+)/', $out, $p)) {
         throw new Exception("Could not parse master status from output: \n$out");
     }
