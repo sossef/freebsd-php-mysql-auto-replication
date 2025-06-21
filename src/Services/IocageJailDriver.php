@@ -60,7 +60,7 @@ class IocageJailDriver implements JailDriverInterface
 
         // 🛡 Skip check if dry-run is enabled
         if ($this->shell->isDryRun()) {
-            echo "⚠️ [DRY-RUN] Skipping jail root existence check: {$rootPath}\n";
+            echo "🔇 [DRY-RUN] Skipping jail root existence check: {$rootPath}\n";
             return;
         }
 

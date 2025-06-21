@@ -109,6 +109,12 @@ class Replicator
      */
     private MySqlConfigurator $mysql;
 
+    /**
+     * Handles replication SQL injection and verification.
+     *
+     * @var ReplicationVerifier
+     */
+    private ReplicationVerifier $replicationVerifier;
 
     /**
      * Constructor
@@ -142,6 +148,7 @@ class Replicator
         $this->configurator = new JailConfigurator($this->shell);
         $this->certs = new CertManager($this->shell, $this->sshKey);
         $this->mysql = new MySqlConfigurator($this->shell, $this->sshKey);
+        $this->verifier = new ReplicationVerifier($this->shell);
     }
 
     /**
@@ -196,9 +203,20 @@ class Replicator
         // Step 6: Transfer SSL certs from primary jail to replica
         $this->certs->transferCerts($this->from, $this->sourceJail, $this->replicaJail);
 
-        // Step 7: Configure replica's my.cnf and restart MySQL
+        // Step 7: Configure replica's my.cnf, restart MySQL and get master log info
         $this->mysql->configure($this->from, $this->sourceJail, $this->replicaJail);
+        [$logFile, $logPos] = $this->mysql->getMasterStatus($this->from, $this->sourceJail);
 
-        echo "\n✅ Jail network, certs, and MySQL configuration complete.\n";
+        // Step 8: Inject SQL into replica and optionally verify
+        $this->verifier->verify(
+            $this->getRemoteHostOnly(),
+            $this->sourceJail,
+            $this->replicaJail,
+            $logFile,
+            $logPos,
+            $this->skipTest
+        );
+
+        echo "\n✅ Replica setup complete and replication initialized.\n\n";
     }
 }

@@ -36,7 +36,7 @@ class JailConfigurator
         $configPath = "/tank/iocage/jails/{$jailName}/config.json";
 
         if ($this->shell->isDryRun()) {
-            echo "⚠️ [DRY-RUN] Skipping jail config update: {$configPath}\n";
+            echo "🔇 [DRY-RUN] Skipping jail config update: {$configPath}\n";
             return;
         }
 
