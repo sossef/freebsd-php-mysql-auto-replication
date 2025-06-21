@@ -48,41 +48,49 @@ class MySqlConfigurator
         $replicaRoot = "/tank/iocage/jails/{$replicaJail}/root";
         $mycnfPath = "{$replicaRoot}/usr/local/etc/mysql/my.cnf";
 
-        // 🔹 Step 1: Copy my.cnf from remote
+        // Step 1: Copy my.cnf from remote jail to /tmp
         $this->shell->run(
             "scp {$this->sshKey} {$remote}:/tank/iocage/jails/{$sourceJail}/root/usr/local/etc/mysql/my.cnf /tmp/my.cnf_primary",
             "Copy my.cnf from primary jail"
         );
 
+        // Step 2: Move my.cnf into replica jail
         $this->shell->run(
             "sudo mv /tmp/my.cnf_primary {$mycnfPath}",
             "Move my.cnf into replica jail"
         );
 
-        // 🔹 Step 2: Modify values inside my.cnf
-        $content = file_get_contents($mycnfPath);
+        // Step 3: Modify config contents (only in non-dry-run mode)
+        if ($this->shell->isDryRun()) {
+            echo "🔇 [DRY-RUN] Skipping file read/write for {$mycnfPath}\n";
+        } else {
+            $content = file_get_contents($mycnfPath);
 
-        if ($content === false) {
-            throw new RuntimeException("Failed to read my.cnf at {$mycnfPath}");
+            if ($content === false) {
+                throw new RuntimeException("Failed to read my.cnf at {$mycnfPath}");
+            }
+
+            if (!preg_match('/^\[mysqld\]/m', $content)) {
+                $content = "[mysqld]\n" . $content;
+            }
+
+            // Remove any existing server-id
+            $content = preg_replace('/server-id\s*=\s*\d+/i', '', $content);
+            $content .= "\nserver-id=" . $this->generateServerId();
+
+            // Set SSL cert/key paths
+            $content = preg_replace('/ssl-cert\s*=.*/i', 'ssl-cert=/var/db/mysql/certs/client-cert.pem', $content);
+            $content = preg_replace('/ssl-key\s*=.*/i', 'ssl-key=/var/db/mysql/certs/client-key.pem', $content);
+
+            // Add relay-log if not present
+            if (!preg_match('/relay-log\s*=/i', $content)) {
+                $content .= "\nrelay-log=relay-log";
+            }
+
+            file_put_contents($mycnfPath, $content);
         }
 
-        if (!preg_match('/^\[mysqld\]/m', $content)) {
-            $content = "[mysqld]\n" . $content;
-        }
-
-        $content = preg_replace('/server-id\s*=\s*\d+/i', '', $content); // remove if already set
-        $content .= "\nserver-id=" . $this->generateServerId();
-
-        $content = preg_replace('/ssl-cert\s*=.*/i', 'ssl-cert=/var/db/mysql/certs/client-cert.pem', $content);
-        $content = preg_replace('/ssl-key\s*=.*/i', 'ssl-key=/var/db/mysql/certs/client-key.pem', $content);
-
-        if (!preg_match('/relay-log\s*=/i', $content)) {
-            $content .= "\nrelay-log=relay-log";
-        }
-
-        file_put_contents($mycnfPath, $content);
-
-        // 🔹 Step 3: Restart MySQL and regenerate UUID
+        // Step 4: Restart MySQL and regenerate UUID
         $this->shell->run(
             "sudo iocage exec {$replicaJail} service mysql-server stop",
             "Stop MySQL in replica jail"
@@ -98,6 +106,7 @@ class MySqlConfigurator
             "Start MySQL in replica jail"
         );
     }
+
 
     /**
      * Generate a server-id that is not in use (e.g. 2–99)
