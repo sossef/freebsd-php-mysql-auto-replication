@@ -68,7 +68,7 @@ function generateServerID() {
 
 function getMasterStatus($remote, $sshKey) {
     global $sourceJail;
-    $cmd = "ssh $sshKey $remote \"sudo iocage exec $sourceJail '/usr/local/bin/mysql -urepl -preplica_pass         --ssl-ca=/var/db/mysql/certs/ca.pem         --ssl-cert=/var/db/mysql/certs/client-cert.pem         --ssl-key=/var/db/mysql/certs/client-key.pem -e \\\"SHOW MASTER STATUS\\\\\\\\G\\\"'\"";
+    $cmd = "ssh $sshKey $remote \"sudo iocage exec $sourceJail /usr/local/bin/mysql -e \\\"SHOW MASTER STATUS\\\\G\\\"\"";
     $out = shell_exec($cmd);
     if (!$out) throw new Exception("Failed to get master status output.");
     if (!preg_match('/File:\s+(\S+)/', $out, $f) || !preg_match('/Position:\s+(\d+)/', $out, $p)) {
