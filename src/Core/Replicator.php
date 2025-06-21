@@ -115,7 +115,7 @@ class Replicator
      *
      * @var ReplicationVerifier
      */
-    private ReplicationVerifier $replicationVerifier;
+    private ReplicationVerifier $verifier;
 
     /**
      * Constructor
@@ -149,7 +149,7 @@ class Replicator
         $this->configurator = new JailConfigurator($this->shell);
         $this->certs = new CertManager($this->shell, $this->sshKey);
         $this->mysql = new MySqlConfigurator($this->shell, $this->sshKey);
-        $this->replicationVerifier = new ReplicationVerifier($this->shell);
+        $this->verifier = new ReplicationVerifier($this->shell);
     }
 
     /**
@@ -209,7 +209,7 @@ class Replicator
         [$logFile, $logPos] = $this->mysql->getMasterStatus($this->from, $this->sourceJail);
 
         // Step 8: Inject SQL into replica and optionally verify
-        $this->replicationVerifier->verify(
+        $this->verifier->verify(
             $this->getRemoteHostOnly(),
             $this->sourceJail,
             $this->replicaJail,
