@@ -6,6 +6,7 @@ use Monsefrachid\MysqlReplication\Support\ShellRunner;
 use Monsefrachid\MysqlReplication\Services\ZfsSnapshotManager;
 use Monsefrachid\MysqlReplication\Services\JailManager;
 use Monsefrachid\MysqlReplication\Services\IocageJailDriver;
+use Monsefrachid\MysqlReplication\Services\JailConfigurator;
 
 /**
  * Class Replicator
@@ -79,6 +80,14 @@ class Replicator
     private JailManager $jails;
 
     /**
+     * Configures replica jail's network, hostname, and other flags.
+     *
+     * @var JailConfigurator
+     */
+    private JailConfigurator $configurator;
+
+
+    /**
      * Constructor
      *
      * @param string $from Format: user@host:jailName
@@ -106,6 +115,7 @@ class Replicator
         $this->jails = new JailManager(
             new IocageJailDriver($this->shell)
         );
+        $this->configurator = new JailConfigurator();
     }
 
     /**
@@ -113,10 +123,10 @@ class Replicator
      */
     public function run(): void
     {
-        echo "\n🛠️ Running replication from '{$this->from}:{$this->sourceJail}' to '{$this->replicaJail}'\n";
+        echo "\n🛠️ Running replication from '{$this->from}:{$this->sourceJail}' to '{$this->replicaJail}'\n\n";
         echo 'Flags: force=' . ($this->force ? 'true' : 'false') .
             ', dryRun=' . ($this->dryRun ? 'true' : 'false') .
-            ', skipTest=' . ($this->skipTest ? 'true' : 'false') . "\n";
+            ', skipTest=' . ($this->skipTest ? 'true' : 'false') . "\n\n";
 
         // Step 0: Check for existing jail and destroy if --force is set
         if ($this->jails->exists($this->replicaJail)) {
@@ -151,9 +161,12 @@ class Replicator
             $this->replicaJail
         );
 
+        // Step 4: Ensure jail root exists
         $this->jails->assertRootExists($this->replicaJail);
 
-        // Step 4: Jail config, cert copy, mysql setup (to be implemented)
-        echo "\n✅ Snapshot transfer complete. Next: configure jail and MySQL.\n";
+        // Step 5: Configure replica jail
+        $this->configurator->configure($this->replicaJail);
+
+        echo "\n✅ Jail config updated. Next: MySQL certs and replication config.\n";
     }
 }
