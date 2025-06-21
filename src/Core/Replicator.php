@@ -9,6 +9,7 @@ use Monsefrachid\MysqlReplication\Services\IocageJailDriver;
 use Monsefrachid\MysqlReplication\Services\JailConfigurator;
 use Monsefrachid\MysqlReplication\Services\CertManager;
 use Monsefrachid\MysqlReplication\Services\MySqlConfigurator;
+use Monsefrachid\MysqlReplication\Services\ReplicationVerifier;
 
 /**
  * Class Replicator
