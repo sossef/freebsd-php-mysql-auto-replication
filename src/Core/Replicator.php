@@ -220,4 +220,16 @@ class Replicator
 
         echo "\n✅ Replica setup complete and replication initialized.\n\n";
     }
+
+    /**
+     * Extracts only the host portion from the $from value (e.g., user@host).
+     *
+     * @return string
+     */
+    private function getRemoteHostOnly(): string
+    {
+        // Expects format user@host
+        [, $host] = explode('@', $this->from);
+        return $host;
+    }
 }
