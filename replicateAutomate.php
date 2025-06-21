@@ -5,26 +5,26 @@
  * MySQL Replica Automation Script using ZFS Snapshots (FreeBSD)
  *
  * Usage:
- *   ./replicateAutomate.php -from user@primaryHost:primaryJail -to localhost:newReplicaJailName
+ *   ./replicateAutomate.php --from user@primaryHost:primaryJail --to localhost:newReplicaJailName [--force]
  */
 
 function parseArgs() {
     global $argv;
-    $args = getopt("", ["from:", "to:"]);
+    $args = getopt("", ["from:", "to:", "force"]);
     if (!$args || !isset($args['from']) || !isset($args['to'])) {
-        fwrite(STDERR, "Usage: ./replicateAutomate.php --from user@host:jailName --to localhost:replicaJailName\n");
+        fwrite(STDERR, "Usage: ./replicateAutomate.php --from user@host:jailName --to localhost:replicaJailName [--force]\n");
         exit(1);
     }
 
     list($fromUserHost, $fromJail) = explode(':', $args['from']);
     list($toHost, $toJail) = explode(':', $args['to']);
 
-    return [$fromUserHost, $fromJail, $toJail];
+    return [$fromUserHost, $fromJail, $toJail, isset($args['force'])];
 }
 
 function run($cmd, $desc, $rollback = null) {
     echo "⚙️ [STEP] $desc...\n";
-    echo "👉 [CMD] $cmd\n";
+    echo "🔍 [CMD] $cmd\n";
     exec($cmd, $output, $code);
     if ($code !== 0) {
         echo "❌ [ERROR] $desc failed.\n";
@@ -70,7 +70,7 @@ function generateServerID() {
 function getMasterStatus($remote, $sshKey) {
     global $sourceJail;
     $cmd = "ssh $sshKey $remote \"sudo iocage exec $sourceJail /usr/local/bin/mysql -e \\\"SHOW MASTER STATUS\\\\G\\\"\"";
-    echo "👉 [CMD] $cmd\n";
+    echo "🔍 [CMD] $cmd\n";
     $out = shell_exec($cmd);
     if (!$out) throw new Exception("Failed to get master status output.");
     if (!preg_match('/File:\s+(\\S+)/', $out, $f) || !preg_match('/Position:\s+(\\d+)/', $out, $p)) {
@@ -79,11 +79,24 @@ function getMasterStatus($remote, $sshKey) {
     return [$f[1], $p[1]];
 }
 
-list($remote, $sourceJail, $replicaJail) = parseArgs();
+list($remote, $sourceJail, $replicaJail, $force) = parseArgs();
 $sshKey = "-i ~/.ssh/id_digitalocean";
 $date = date("YmdHis");
 $snapshot = "$sourceJail@replica_$date";
 $remoteHostOnly = preg_replace('/^.*@/', '', $remote);
+
+// Handle --force logic
+$checkCmd = "sudo iocage list -H -q | awk '{print \$1}' | grep -w ^$replicaJail$";
+$existing = trim(shell_exec($checkCmd));
+if ($existing) {
+    if ($force) {
+        echo "⚠️ [FORCE] Replica jail '$replicaJail' exists. Stopping and destroying it...\n";
+        run("sudo iocage destroy -f --recursive $replicaJail", "Force destroy replica jail and all datasets recursively");
+    } else {
+        echo "❌ [ERROR] Replica jail '$replicaJail' already exists. Use --force to overwrite.\n";
+        exit(1);
+    }
+}
 
 run("ssh $sshKey $remote sudo zfs snapshot -r tank/iocage/jails/$sourceJail@replica_$date", "Create ZFS snapshot on primary");
 run("ssh $sshKey $remote zfs list -t snapshot | grep replica_$date", "Verify snapshot exists on primary");
@@ -139,7 +152,7 @@ if ($mycnf === false) {
 if (!preg_match('/^\[mysqld\]/m', $mycnf)) {
     $mycnf = "[mysqld]\n" . $mycnf;
 }
-$mycnf = preg_replace("/server-id\\s*=\\s*\\d+/i", "server-id=$serverId", $mycnf);
+$mycnf = preg_replace("/server-id\\s*=\\s*\d+/i", "server-id=$serverId", $mycnf);
 $mycnf = preg_replace("/ssl-cert\\s*=.*\\.pem/i", "ssl-cert=/var/db/mysql/certs/client-cert.pem", $mycnf);
 $mycnf = preg_replace("/ssl-key\\s*=.*\\.pem/i", "ssl-key=/var/db/mysql/certs/client-key.pem", $mycnf);
 if (!preg_match("/relay-log\\s*=/i", $mycnf)) {
@@ -169,13 +182,8 @@ CHANGE MASTER TO
 START REPLICA;
 SHOW REPLICA STATUS\G;
 EOD;
-file_put_contents("/tmp/replica_setup.sql", $replicaSQL);
 
-if (!is_dir($replicaRoot)) {
-    echo "❌ [ERROR] Replica jail root '$replicaRoot' does not exist or is invalid. Aborting.\n";
-    exec($rollbackCmd);
-    exit(1);
-}
+file_put_contents("/tmp/replica_setup.sql", $replicaSQL);
 
 run("sudo iocage exec $replicaJail /usr/local/bin/mysql < /tmp/replica_setup.sql", "Configure replication on replica");
 @unlink("/tmp/replica_setup.sql");
