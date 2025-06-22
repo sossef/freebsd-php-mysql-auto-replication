@@ -38,19 +38,21 @@ class ReplicationVerifier
 
         $date = date('YmdHis');
         $testInsert = <<<SQL
-CREATE DATABASE IF NOT EXISTS testdb;
-USE testdb;
-CREATE TABLE IF NOT EXISTS ping (msg VARCHAR(100));
-INSERT INTO ping (msg) VALUES ('replication check @ $date');
-SQL;
+        CREATE DATABASE IF NOT EXISTS testdb;
+        USE testdb;
+        CREATE TABLE IF NOT EXISTS ping (msg VARCHAR(100));
+        INSERT INTO ping (msg) VALUES ('replication check @ $date');
+        SQL;
 
         $insertCmd = "echo \"$testInsert\" | ssh {$this->sshKey} {$remoteHostOnly} \"sudo iocage exec {$sourceJail} /usr/local/bin/mysql\"";
         $this->shell->run($insertCmd, "Insert test row on primary");
 
         sleep(4);
+
         $testSelect = <<<SQL
-SELECT msg FROM testdb.ping WHERE msg = \'replication check @ $date\';
-SQL;
+        SELECT msg FROM testdb.ping WHERE msg = "replication check @ $date";
+        SQL;
+
         $check = shell_exec("sudo iocage exec {$replicaJail} /usr/local/bin/mysql -e '{$testSelect}'");
         if (!str_contains($check ?? '', 'replication check')) {
             throw new RuntimeException("❌ Replication test failed. Test row not found in replica.");
