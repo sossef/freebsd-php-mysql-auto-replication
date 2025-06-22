@@ -49,7 +49,7 @@ SQL;
 
         sleep(4);
         $testSelect = <<<SQL
-SELECT msg FROM testdb.ping WHERE msg = 'replication check @ {$date}';
+SELECT msg FROM testdb.ping WHERE msg = \'replication check @ $date\';
 SQL;
         $check = shell_exec("sudo iocage exec {$replicaJail} /usr/local/bin/mysql -e '{$testSelect}'");
         if (!str_contains($check ?? '', 'replication check')) {
