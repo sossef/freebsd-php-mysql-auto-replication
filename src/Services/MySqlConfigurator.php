@@ -43,7 +43,7 @@ class MySqlConfigurator
      *
      * @return void
      */
-    public function configure(string $remoteHostOnly, string $remote, string $sourceJail, string $replicaJail): void
+    public function configure(string $remoteHostOnly, string $replicaJail, string $snapshotName): void
     {
         $replicaRoot = "/tank/iocage/jails/{$replicaJail}/root";
         $mycnfPath = "{$replicaRoot}/usr/local/etc/mysql/my.cnf";
@@ -97,7 +97,8 @@ class MySqlConfigurator
             "Start MySQL in replica jail"
         );
 
-        $this->injectReplicationSQL($remote, $sourceJail, $replicaJail, $remoteHostOnly);
+        //$this->injectReplicationSQL($remote, $sourceJail, $replicaJail, $remoteHostOnly);
+        $this->injectReplicationSQL($replicaJail, $remoteHostOnly, $snapshotName);
     }
 
     /**
@@ -134,7 +135,7 @@ class MySqlConfigurator
      * @param string $replicaJail The replica jail name running MySQL
      * @param string $remoteHostOnly remote host address
      */
-    private function injectReplicationSQL(string $remote, string $sourceJail, string $replicaJail, string $remoteHostOnly): void
+    private function injectReplicationSQL0(string $remote, string $sourceJail, string $replicaJail, string $remoteHostOnly): void
     {
         $output = $this->shell->shell(
             "ssh {$this->sshKey} {$remote} \"sudo iocage exec {$sourceJail} /usr/local/bin/mysql -e 'SHOW MASTER STATUS\\G'\"",
@@ -180,4 +181,61 @@ class MySqlConfigurator
 
         @unlink('/tmp/replica_setup.sql');
     }
+
+    private function injectReplicationSQL(string $replicaJail, string $remoteHostOnly, string $snapshotName): void
+    {
+        [$logFile, $logPos] = $this->getMasterStatusFromMeta($snapshotName);
+
+        echo "🔢 Binlog: {$logFile}, Position: {$logPos}\n";
+
+        $sql = <<<EOD
+        STOP REPLICA;
+        RESET REPLICA ALL;
+        CHANGE MASTER TO
+        MASTER_HOST='$remoteHostOnly',
+        MASTER_USER='repl',
+        MASTER_PASSWORD='replica_pass',
+        MASTER_LOG_FILE='$logFile',
+        MASTER_LOG_POS=$logPos,
+        MASTER_SSL=1,
+        MASTER_SSL_CA='/var/db/mysql/certs/ca.pem',
+        MASTER_SSL_CERT='/var/db/mysql/certs/client-cert.pem',
+        MASTER_SSL_KEY='/var/db/mysql/certs/client-key.pem';
+        START REPLICA;
+        SHOW REPLICA STATUS\G;
+        EOD;
+
+        file_put_contents('/tmp/replica_setup.sql', $sql);
+
+        $this->shell->run(
+            "sudo iocage exec {$replicaJail} /usr/local/bin/mysql < /tmp/replica_setup.sql",
+            "Configure replication (inject SQL)"
+        );
+
+        @unlink('/tmp/replica_setup.sql');
+    }
+
+
+    private function getMasterStatusFromMeta(string $snapshotName): array
+    {
+        $metaPath = "/tank/backups/iocage/jail/{$snapshotName}.meta";
+
+        if (!file_exists($metaPath)) {
+            throw new \RuntimeException("Meta file not found at: {$metaPath}");
+        }
+
+        $lines = file($metaPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+
+        if (count($lines) < 2) {
+            throw new \RuntimeException("Meta file must contain at least 2 lines (log file and log position).");
+        }
+
+        $logFile = trim($lines[0]);
+        $logPos = (int) trim($lines[1]);
+
+        echo "🔢 Binlog: {$logFile}, Position: {$logPos}\n";
+
+        return [$logFile, $logPos];
+    }
+
 }

@@ -188,7 +188,7 @@ class Replicator
         );
 
         // Step 3: Transfer snapshot to local and create new jail dataset
-        $this->zfs->sendSnapshotToLocal(
+        $this->zfs->receiveSnapshotFromRemoteFile(
             $this->from,
             $snapshot,
             $this->replicaJail
@@ -207,9 +207,8 @@ class Replicator
         // Step 7: Configure replica's my.cnf, restart MySQL and get master log info
         $this->mysql->configure(
             $this->getRemoteHostOnly(),
-            $this->from,
-            $this->sourceJail,
-            $this->replicaJail
+            $this->replicaJail,
+            $snapshot
         );
 
         // Step 8: Replication testing

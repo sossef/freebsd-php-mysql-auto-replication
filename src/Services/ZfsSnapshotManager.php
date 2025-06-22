@@ -46,7 +46,7 @@ class ZfsSnapshotManager
      *
      * @return string The full snapshot name (e.g., jail@suffix)
      */
-    public function createRemoteSnapshot(string $remote, string $jailName, string $snapshotSuffix): string
+    public function createRemoteSnapshot0(string $remote, string $jailName, string $snapshotSuffix): string
     {
         $snapshot = "{$jailName}@{$snapshotSuffix}";
         $this->shell->run(
@@ -54,6 +54,69 @@ class ZfsSnapshotManager
             "Create remote ZFS snapshot: {$snapshot}"
         );
         return $snapshot;
+    }
+
+    public function createRemoteSnapshot(string $remote, string $jailName, string $snapshotSuffix): string
+    {
+        $snapshotName = "{$jailName}_{$snapshotSuffix}";
+        $remoteBackupDir = "/tank/backups/iocage/jail";
+        $snapshotFull = "tank/iocage/jails/{$jailName}@{$snapshotSuffix}";
+        $zfsFile = "{$remoteBackupDir}/{$snapshotName}.zfs";
+        $metaFile = "{$remoteBackupDir}/{$snapshotName}.meta";
+
+        // Step 1: Capture master status
+        $cmdMasterStatus = "ssh {$this->sshKey} {$remote} \"sudo iocage exec {$jailName} /usr/local/bin/mysql -N -e 'SHOW MASTER STATUS'\"";
+        $output = $this->shell->shell($cmdMasterStatus, "Fetch MySQL master status on {$jailName}");
+        $lines = explode("\n", trim($output));
+
+        if (count($lines) < 1 || !str_contains($lines[0], "\t")) {
+            throw new \RuntimeException("Unexpected output when fetching master status:\n{$output}");
+        }
+
+        [$logFile, $logPos] = explode("\t", $lines[0]);
+
+        // Step 2: Create snapshot
+        $this->shell->run(
+            "ssh {$this->sshKey} {$remote} sudo zfs snapshot -r {$snapshotFull}",
+            "Create snapshot {$snapshotFull} on remote"
+        );
+
+        // Step 3: Send snapshot to file
+        $this->shell->run(
+            "ssh {$this->sshKey} {$remote} \"sudo zfs send -R {$snapshotFull} | sudo tee {$zfsFile} > /dev/null\"",
+            "Send snapshot to file {$zfsFile}"
+        );
+
+        // Step 4: Write meta file (log file and position)
+        $this->shell->run(
+            "ssh {$this->sshKey} {$remote} \"echo '{$logFile}' > /tmp/{$snapshotName}.meta && echo '{$logPos}' >> /tmp/{$snapshotName}.meta && sudo mv /tmp/{$snapshotName}.meta {$metaFile}\"",
+            "Write binlog metadata to {$metaFile}"
+        );
+
+        return $snapshotName; // base name without .zfs or .meta extension
+    }
+
+    public function receiveSnapshotFromRemoteFile(
+        string $remote,
+        string $snapshotName,
+        string $targetJailName
+    ): void {
+        $remotePath = "/tank/backups/iocage/jail";
+        $localPath = "/tank/backups/iocage/jail";
+        $zfsFile = "{$snapshotName}.zfs";
+        $metaFile = "{$snapshotName}.meta";
+
+        // Step 1: SCP both .zfs and .meta from remote
+        $this->shell->run(
+            "scp -i {$this->sshKey} {$remote}:{$remotePath}/{$zfsFile} {$remote}:{$remotePath}/{$metaFile} {$localPath}/",
+            "Transfer snapshot and metadata from remote to local"
+        );
+
+        // Step 2: Receive snapshot from .zfs file
+        $this->shell->run(
+            "sudo zfs receive -F tank/iocage/jails/{$targetJailName} < {$localPath}/{$zfsFile}",
+            "Receive snapshot into jail {$targetJailName}"
+        );
     }
 
     /**
@@ -64,12 +127,26 @@ class ZfsSnapshotManager
      *
      * @return void
      */
-    public function verifyRemoteSnapshot(string $remote, string $snapshotSuffix): void
+    public function verifyRemoteSnapshot0(string $remote, string $snapshotSuffix): void
     {
         $this->shell->run(
             "ssh {$this->sshKey} {$remote} zfs list -t snapshot | grep {$snapshotSuffix}",
             "Verify remote snapshot exists"
         );
+    }
+
+    public function verifyRemoteSnapshot(string $remote, string $snapshotSuffix): void
+    {
+        $zfsPath = "/tank/backups/iocage/jail/{$snapshotSuffix}.zfs";
+        $metaPath = "/tank/backups/iocage/jail/{$snapshotSuffix}.meta";
+
+        $cmd = "ssh {$this->sshKey} {$remote} '[ -f {$zfsPath} ] && [ -f {$metaPath} ]'";
+
+        try {
+            $this->shell->run($cmd, "Verify snapshot and metadata files exist on remote");
+        } catch (RuntimeException $e) {
+            throw new RuntimeException("❌ Remote snapshot verification failed: snapshot or metadata not found for '{$snapshotSuffix}'");
+        }
     }
 
     /**
