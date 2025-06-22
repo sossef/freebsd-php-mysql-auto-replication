@@ -160,7 +160,7 @@ class Replicator
         echo "\n🛠️ Running replication from '{$this->from}:{$this->sourceJail}' to '{$this->replicaJail}'\n\n";
         echo 'Flags: force=' . ($this->force ? 'true' : 'false') .
             ', dryRun=' . ($this->dryRun ? 'true' : 'false') .
-            ', skipTest=' . ($this->skipTest ? 'true' : 'false') . "\n\n";
+            ', skipTest=' . ($this->skipTest ? 'true' : 'false') . "\n";
 
         // Step 0: Check for existing jail and destroy if --force is set
         if ($this->jails->exists($this->replicaJail)) {

@@ -48,19 +48,7 @@ class MySqlConfigurator
         $replicaRoot = "/tank/iocage/jails/{$replicaJail}/root";
         $mycnfPath = "{$replicaRoot}/usr/local/etc/mysql/my.cnf";
 
-        // Step 1: Copy my.cnf from remote jail to /tmp
-        // $this->shell->run(
-        //     "scp {$this->sshKey} {$remote}:/tank/iocage/jails/{$sourceJail}/root/usr/local/etc/mysql/my.cnf /tmp/my.cnf_primary",
-        //     "Copy my.cnf from primary jail"
-        // );
-
-        // Step 2: Move my.cnf into replica jail
-        // $this->shell->run(
-        //     "sudo mv /tmp/my.cnf_primary {$mycnfPath}",
-        //     "Move my.cnf into replica jail"
-        // );
-
-        // Step 3: Modify config contents (only in non-dry-run mode)
+        // Modify config contents (only in non-dry-run mode)
         if ($this->shell->isDryRun()) {
             echo "🔇 [DRY-RUN] Skipping file read/write for {$mycnfPath}\n";
         } else {
@@ -93,7 +81,7 @@ class MySqlConfigurator
             file_put_contents($mycnfPath, $content);
         }
 
-        // Step 4: Restart MySQL and regenerate UUID
+        // Restart MySQL and regenerate UUID
         $this->shell->run(
             "sudo iocage exec {$replicaJail} service mysql-server stop",
             "Stop MySQL in replica jail"
@@ -167,21 +155,21 @@ class MySqlConfigurator
         echo "🔢 Binlog: {$logFile}, Position: {$logPos}\n";
 
         $sql = <<<EOD
-    STOP REPLICA;
-    RESET REPLICA ALL;
-    CHANGE MASTER TO
-    MASTER_HOST='$remoteHostOnly',
-    MASTER_USER='repl',
-    MASTER_PASSWORD='replica_pass',
-    MASTER_LOG_FILE='$logFile',
-    MASTER_LOG_POS=$logPos,
-    MASTER_SSL=1,
-    MASTER_SSL_CA='/var/db/mysql/certs/ca.pem',
-    MASTER_SSL_CERT='/var/db/mysql/certs/client-cert.pem',
-    MASTER_SSL_KEY='/var/db/mysql/certs/client-key.pem';
-    START REPLICA;
-    SHOW REPLICA STATUS\G;
-    EOD;
+        STOP REPLICA;
+        RESET REPLICA ALL;
+        CHANGE MASTER TO
+        MASTER_HOST='$remoteHostOnly',
+        MASTER_USER='repl',
+        MASTER_PASSWORD='replica_pass',
+        MASTER_LOG_FILE='$logFile',
+        MASTER_LOG_POS=$logPos,
+        MASTER_SSL=1,
+        MASTER_SSL_CA='/var/db/mysql/certs/ca.pem',
+        MASTER_SSL_CERT='/var/db/mysql/certs/client-cert.pem',
+        MASTER_SSL_KEY='/var/db/mysql/certs/client-key.pem';
+        START REPLICA;
+        SHOW REPLICA STATUS\G;
+        EOD;
 
         file_put_contents('/tmp/replica_setup.sql', $sql);
 
