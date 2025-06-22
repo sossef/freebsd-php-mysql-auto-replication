@@ -108,7 +108,7 @@ class ZfsSnapshotManager
 
         // Step 1: SCP both .zfs and .meta from remote
         $this->shell->run(
-            "scp -i {$this->sshKey} {$remote}:{$remotePath}/{$zfsFile} {$remote}:{$remotePath}/{$metaFile} {$localPath}/",
+            "scp {$this->sshKey} {$remote}:{$remotePath}/{$zfsFile} {$remote}:{$remotePath}/{$metaFile} {$localPath}/",
             "Transfer snapshot and metadata from remote to local"
         );
 
