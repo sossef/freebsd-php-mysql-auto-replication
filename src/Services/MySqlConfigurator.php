@@ -139,39 +139,6 @@ class MySqlConfigurator
 
     /**
      * Retrieve the current binary log file and position from the source MySQL server.
-     *
-     * @param string $remote The SSH user@host of the source server
-     * @param string $sourceJail The source jail name running MySQL
-     * @return array An array with [logFile, logPos]
-     */
-    // public function getMasterStatus(string $remote, string $sourceJail): array
-    // {
-    //     $output = $this->shell->shell(
-    //         "ssh {$this->sshKey} {$remote} \"sudo iocage exec {$sourceJail} /usr/local/bin/mysql -e 'SHOW MASTER STATUS\\G'\"",
-    //         "Fetch MySQL binary log file and position from primary.."
-    //     );
-
-    //     if (!$output) {
-    //         throw new \RuntimeException("Failed to retrieve master status from source MySQL server.");
-    //     }
-
-    //     $logFile = null;
-    //     $logPos = null;
-
-    //     if (!preg_match('/File:\s+(\\S+)/', $output, $f) || !preg_match('/Position:\s+(\\d+)/', $output, $p)) {
-    //         throw new \RuntimeException("Could not parse log file and position from master status output.");
-    //     } else {
-    //         $logFile = $f[1];
-    //         $logPos = $p[1];
-
-    //         echo "🔢 Binlog: {$logFile}, Position: {$logPos}\n";
-    //     }
-
-    //     return [$logFile, $logPos];
-    // }
-
-    /**
-     * Retrieve the current binary log file and position from the source MySQL server.
      * Inject replication config SQL
      *
      * @param string $remote The SSH user@host of the source server
@@ -225,5 +192,4 @@ class MySqlConfigurator
 
         @unlink('/tmp/replica_setup.sql');
     }
-
 }
