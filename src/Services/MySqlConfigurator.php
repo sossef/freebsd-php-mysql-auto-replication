@@ -49,16 +49,16 @@ class MySqlConfigurator
         $mycnfPath = "{$replicaRoot}/usr/local/etc/mysql/my.cnf";
 
         // Step 1: Copy my.cnf from remote jail to /tmp
-        $this->shell->run(
-            "scp {$this->sshKey} {$remote}:/tank/iocage/jails/{$sourceJail}/root/usr/local/etc/mysql/my.cnf /tmp/my.cnf_primary",
-            "Copy my.cnf from primary jail"
-        );
+        // $this->shell->run(
+        //     "scp {$this->sshKey} {$remote}:/tank/iocage/jails/{$sourceJail}/root/usr/local/etc/mysql/my.cnf /tmp/my.cnf_primary",
+        //     "Copy my.cnf from primary jail"
+        // );
 
         // Step 2: Move my.cnf into replica jail
-        $this->shell->run(
-            "sudo mv /tmp/my.cnf_primary {$mycnfPath}",
-            "Move my.cnf into replica jail"
-        );
+        // $this->shell->run(
+        //     "sudo mv /tmp/my.cnf_primary {$mycnfPath}",
+        //     "Move my.cnf into replica jail"
+        // );
 
         // Step 3: Modify config contents (only in non-dry-run mode)
         if ($this->shell->isDryRun()) {
