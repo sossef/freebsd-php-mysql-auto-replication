@@ -184,7 +184,7 @@ class Replicator
         // Step 2: Verify snapshot exists
         $this->zfs->verifyRemoteSnapshot(
             $this->from,
-            $snapshotSuffix
+            $snapshot
         );
 
         // Step 3: Transfer snapshot to local and create new jail dataset

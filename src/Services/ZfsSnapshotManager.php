@@ -135,18 +135,14 @@ class ZfsSnapshotManager
         );
     }
 
-    public function verifyRemoteSnapshot(string $remote, string $snapshotSuffix): void
+    public function verifyRemoteSnapshot(string $remote, string $snapshotName): void
     {
-        $zfsPath = "/tank/backups/iocage/jail/{$snapshotSuffix}.zfs";
-        $metaPath = "/tank/backups/iocage/jail/{$snapshotSuffix}.meta";
-
-        $cmd = "ssh {$this->sshKey} {$remote} '[ -f {$zfsPath} ] && [ -f {$metaPath} ]'";
-
-        try {
-            $this->shell->run($cmd, "Verify snapshot and metadata files exist on remote");
-        } catch (RuntimeException $e) {
-            throw new RuntimeException("❌ Remote snapshot verification failed: snapshot or metadata not found for '{$snapshotSuffix}'");
-        }
+        $base = "/tank/backups/iocage/jail/{$snapshotName}";
+        $cmd = "[ -f {$base}.zfs ] && [ -f {$base}.meta ]";
+        $this->shell->run(
+            "ssh {$this->sshKey} {$remote} '{$cmd}'",
+            "Verify snapshot and metadata files exist on remote"
+        );
     }
 
     /**
