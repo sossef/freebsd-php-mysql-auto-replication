@@ -175,7 +175,6 @@ class Replicator
 
         // Step 1: Create snapshot on remote source jail
         $snapshotSuffix = 'replica_' . date('YmdHis');
-
         $snapshot = $this->zfs->createRemoteSnapshot(
             $this->from,
             $this->sourceJail,
@@ -204,6 +203,14 @@ class Replicator
         // Step 6: Transfer SSL certs from primary jail to replica
         $this->certs->transferCerts($this->from, $this->sourceJail, $this->replicaJail);
 
+        // ✅ Ensure replica jail is running before MySQL config begins
+        if (!$this->jails->isRunning($this->replicaJail)) {
+            echo "🔌 Replica jail '{$this->replicaJail}' is not running. Starting it now...\n";
+            $this->jails->start($this->replicaJail);
+        } else {
+            echo "ℹ️ Replica jail '{$this->replicaJail}' is already running.\n";
+        }
+
         // Step 7: Configure replica's my.cnf, restart MySQL and get master log info
         $this->mysql->configure($this->from, $this->sourceJail, $this->replicaJail);
         [$logFile, $logPos] = $this->mysql->getMasterStatus($this->from, $this->sourceJail);
@@ -220,6 +227,7 @@ class Replicator
 
         echo "\n✅ Replica setup complete and replication initialized.\n\n";
     }
+
 
     /**
      * Extracts only the host portion from the $from value (e.g., user@host).
