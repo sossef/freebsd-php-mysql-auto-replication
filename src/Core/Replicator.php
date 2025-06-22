@@ -213,14 +213,12 @@ class Replicator
         );
 
         // Step 8: Replication testing
-        // $this->verifier->verify(
-        //     $this->getRemoteHostOnly(),
-        //     $this->sourceJail,
-        //     $this->replicaJail,
-        //     $logFile,
-        //     $logPos,
-        //     $this->skipTest
-        // );
+        $this->verifier->verify(
+            $this->getRemoteHostOnly(),
+            $this->sourceJail,
+            $this->replicaJail,
+            $this->skipTest
+        );
 
         echo "\n✅ Replica setup complete and replication initialized.\n\n";
     }

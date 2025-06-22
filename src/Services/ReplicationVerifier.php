@@ -22,8 +22,6 @@ class ReplicationVerifier
         string $remoteHostOnly,
         string $sourceJail,
         string $replicaJail,
-        string $logFile,
-        int $logPos,
         bool $skipTest = false
     ): void {
         if ($this->dryRun) {
@@ -50,7 +48,7 @@ SQL;
         $this->shell->run($insertCmd, "Insert test row on primary");
 
         sleep(4);
-        $check = shell_exec("sudo iocage exec {$replicaJail} /usr/local/bin/mysql -e 'SELECT msg FROM testdb.ping ORDER BY msg DESC LIMIT 1'");
+        $check = shell_exec("sudo iocage exec {$replicaJail} /usr/local/bin/mysql -e 'SELECT msg FROM testdb.ping WHERE msg = 'replication check @ {$date}'");
         if (!str_contains($check ?? '', 'replication check')) {
             throw new RuntimeException("❌ Replication test failed. Test row not found in replica.");
         }
