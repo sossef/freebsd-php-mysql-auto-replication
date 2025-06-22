@@ -49,6 +49,28 @@ class JailManager
     }
 
     /**
+     * Start a jail via the jail driver.
+     *
+     * @param string $jailName
+     * @return void
+     */
+    public function start(string $jailName): void
+    {
+        $this->driver->start($jailName);
+    }
+
+    /**
+     * Check if a jail is running using the jail driver.
+     *
+     * @param string $jailName
+     * @return bool
+     */
+    public function isRunning(string $jailName): bool
+    {
+        return $this->driver->isRunning($jailName);
+    }
+
+    /**
      * Assert that the jail root directory exists.
      *
      * @param string $jailName

@@ -52,6 +52,35 @@ class IocageJailDriver implements JailDriverInterface
     }
 
     /**
+     * Start the specified jail using iocage.
+     *
+     * @param string $jailName
+     * @return void
+     * @throws RuntimeException if the jail fails to start
+     */
+    public function start(string $jailName): void
+    {
+        $this->shell->run("sudo iocage start {$jailName}", "Start replica jail");
+    }
+
+    /**
+     * Check if the specified jail is currently running.
+     *
+     * @param string $jailName
+     * @return bool
+     */
+    public function isRunning(string $jailName): bool
+    {
+        // Run the iocage command to get jail state
+        $cmd = "sudo iocage get state {$jailName} 2>/dev/null";
+        $output = shell_exec($cmd);
+
+        // Trim and check if state equals "up"
+        $status = is_string($output) ? trim($output) : '';
+        return $status === 'up';
+    }
+
+    /**
      * {@inheritdoc}
      */
     public function assertJailRootExists(string $jailName): void

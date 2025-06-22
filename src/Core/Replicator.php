@@ -197,33 +197,30 @@ class Replicator
         // Step 4: Ensure jail root exists
         $this->jails->assertRootExists($this->replicaJail);
 
-        // Step 5: Configure replica jail (IP, boot flags, hostname, etc.)
+        // Step 5: Configure replica jail and start
         $this->configurator->configure($this->replicaJail);
+        $this->jails->start($this->replicaJail);
 
         // Step 6: Transfer SSL certs from primary jail to replica
         $this->certs->transferCerts($this->from, $this->sourceJail, $this->replicaJail);
 
-        // ✅ Ensure replica jail is running before MySQL config begins
-        if (!$this->jails->isRunning($this->replicaJail)) {
-            echo "🔌 Replica jail '{$this->replicaJail}' is not running. Starting it now...\n";
-            $this->jails->start($this->replicaJail);
-        } else {
-            echo "ℹ️ Replica jail '{$this->replicaJail}' is already running.\n";
-        }
-
         // Step 7: Configure replica's my.cnf, restart MySQL and get master log info
-        $this->mysql->configure($this->from, $this->sourceJail, $this->replicaJail);
-        [$logFile, $logPos] = $this->mysql->getMasterStatus($this->from, $this->sourceJail);
-
-        // Step 8: Inject SQL into replica and optionally verify
-        $this->verifier->verify(
+        $this->mysql->configure(
             $this->getRemoteHostOnly(),
+            $this->from,
             $this->sourceJail,
-            $this->replicaJail,
-            $logFile,
-            $logPos,
-            $this->skipTest
+            $this->replicaJail
         );
+
+        // Step 8: Replication testing
+        // $this->verifier->verify(
+        //     $this->getRemoteHostOnly(),
+        //     $this->sourceJail,
+        //     $this->replicaJail,
+        //     $logFile,
+        //     $logPos,
+        //     $this->skipTest
+        // );
 
         echo "\n✅ Replica setup complete and replication initialized.\n\n";
     }

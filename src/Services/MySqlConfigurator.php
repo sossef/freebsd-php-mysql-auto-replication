@@ -43,7 +43,7 @@ class MySqlConfigurator
      *
      * @return void
      */
-    public function configure(string $remote, string $sourceJail, string $replicaJail): void
+    public function configure(string $remoteHostOnly, string $remote, string $sourceJail, string $replicaJail): void
     {
         $replicaRoot = "/tank/iocage/jails/{$replicaJail}/root";
         $mycnfPath = "{$replicaRoot}/usr/local/etc/mysql/my.cnf";
@@ -74,9 +74,12 @@ class MySqlConfigurator
                 $content = "[mysqld]\n" . $content;
             }
 
-            // Remove any existing server-id
-            $content = preg_replace('/server-id\s*=\s*\d+/i', '', $content);
-            $content .= "\nserver-id=" . $this->generateServerId();
+            // Set server-id
+            if (preg_match('/server-id\s*=\s*\d+/i', $content)) {
+                $content = preg_replace('/server-id\s*=\s*\d+/i', 'server-id=' . $this->generateServerId(), $content);
+            } else {
+                $content .= "\nserver-id=" . $this->generateServerId();
+            }
 
             // Set SSL cert/key paths
             $content = preg_replace('/ssl-cert\s*=.*/i', 'ssl-cert=/var/db/mysql/certs/client-cert.pem', $content);
@@ -105,8 +108,36 @@ class MySqlConfigurator
             "sudo iocage exec {$replicaJail} service mysql-server start",
             "Start MySQL in replica jail"
         );
-    }
 
+        [$logFile, $logPos] = $this->getMasterStatus($remote, $sourceJail);
+
+        // Replication setup
+        $sql = <<<EOD
+STOP REPLICA;
+RESET REPLICA ALL;
+CHANGE MASTER TO
+  MASTER_HOST='$remoteHostOnly',
+  MASTER_USER='repl',
+  MASTER_PASSWORD='replica_pass',
+  MASTER_LOG_FILE='$logFile',
+  MASTER_LOG_POS=$logPos,
+  MASTER_SSL=1,
+  MASTER_SSL_CA='/var/db/mysql/certs/ca.pem',
+  MASTER_SSL_CERT='/var/db/mysql/certs/client-cert.pem',
+  MASTER_SSL_KEY='/var/db/mysql/certs/client-key.pem';
+START REPLICA;
+SHOW REPLICA STATUS\G;
+EOD;
+
+        file_put_contents('/tmp/replica_setup.sql', $sql);
+
+        $this->shell->run(
+            "sudo iocage exec {$replicaJail} /usr/local/bin/mysql < /tmp/replica_setup.sql",
+            "Configure replication on replica"
+        );
+
+        @unlink('/tmp/replica_setup.sql');
+    }
 
     /**
      * Generate a server-id that is not in use (e.g. 2–99)

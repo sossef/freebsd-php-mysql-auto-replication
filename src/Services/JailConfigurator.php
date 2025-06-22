@@ -74,9 +74,15 @@ class JailConfigurator
         foreach (glob('/tank/iocage/jails/*/config.json') as $file) {
             $data = json_decode(file_get_contents($file), true);
 
+            if (!$data || !is_array($data)) {
+                continue;
+            }
+
             if (
                 isset($data['ip4_addr']) &&
-                preg_match('/10\.0\.0\.(\d+)/', $data['ip4_addr'], $m)
+                is_string($data['ip4_addr']) &&
+                strpos($data['ip4_addr'], '10.0.0.') !== false &&
+                preg_match("/10\\.0\\.0\\.(\\d+)/", $data['ip4_addr'], $m)
             ) {
                 $used[] = (int)$m[1];
             }

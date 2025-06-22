@@ -31,31 +31,6 @@ class ReplicationVerifier
             return;
         }
 
-        // Replication setup
-        $sql = <<<SQL
-STOP REPLICA;
-RESET REPLICA ALL;
-CHANGE MASTER TO
-  MASTER_HOST='$remoteHostOnly',
-  MASTER_USER='repl',
-  MASTER_PASSWORD='replica_pass',
-  MASTER_LOG_FILE='$logFile',
-  MASTER_LOG_POS=$logPos,
-  MASTER_SSL=1,
-  MASTER_SSL_CA='/var/db/mysql/certs/ca.pem',
-  MASTER_SSL_CERT='/var/db/mysql/certs/client-cert.pem',
-  MASTER_SSL_KEY='/var/db/mysql/certs/client-key.pem';
-START REPLICA;
-SHOW REPLICA STATUS\\G;
-SQL;
-
-        file_put_contents('/tmp/replica_setup.sql', $sql);
-        $this->shell->run(
-            "sudo iocage exec {$replicaJail} /usr/local/bin/mysql < /tmp/replica_setup.sql",
-            "Run MySQL replication SQL in replica"
-        );
-        @unlink('/tmp/replica_setup.sql');
-
         if ($skipTest) {
             echo "⚠️ [SKIP] Replication test skipped due to --skip-test flag.\n";
             return;
