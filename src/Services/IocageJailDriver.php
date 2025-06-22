@@ -34,7 +34,8 @@ class IocageJailDriver implements JailDriverInterface
     public function jailExists(string $jailName): bool
     {
         $output = $this->shell->shell(
-            "sudo iocage list -H -q | awk '{print \$1}' | grep -w ^{$jailName}$"
+            "sudo iocage list -H -q | awk '{print \$1}' | grep -w ^{$jailName}$",
+            "Check if jail '{$jailName}' exists"
         );
 
         return is_string($output) && trim($output) === $jailName;

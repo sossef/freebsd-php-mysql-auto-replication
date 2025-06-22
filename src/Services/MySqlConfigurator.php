@@ -109,34 +109,7 @@ class MySqlConfigurator
             "Start MySQL in replica jail"
         );
 
-        [$logFile, $logPos] = $this->getMasterStatus($remote, $sourceJail);
-
-        // Replication setup
-        $sql = <<<EOD
-STOP REPLICA;
-RESET REPLICA ALL;
-CHANGE MASTER TO
-  MASTER_HOST='$remoteHostOnly',
-  MASTER_USER='repl',
-  MASTER_PASSWORD='replica_pass',
-  MASTER_LOG_FILE='$logFile',
-  MASTER_LOG_POS=$logPos,
-  MASTER_SSL=1,
-  MASTER_SSL_CA='/var/db/mysql/certs/ca.pem',
-  MASTER_SSL_CERT='/var/db/mysql/certs/client-cert.pem',
-  MASTER_SSL_KEY='/var/db/mysql/certs/client-key.pem';
-START REPLICA;
-SHOW REPLICA STATUS\G;
-EOD;
-
-        file_put_contents('/tmp/replica_setup.sql', $sql);
-
-        $this->shell->run(
-            "sudo iocage exec {$replicaJail} /usr/local/bin/mysql < /tmp/replica_setup.sql",
-            "Configure replication on replica"
-        );
-
-        @unlink('/tmp/replica_setup.sql');
+        $this->injectReplicationSQL($remote, $sourceJail, $replicaJail, $remoteHostOnly);
     }
 
     /**
@@ -171,35 +144,86 @@ EOD;
      * @param string $sourceJail The source jail name running MySQL
      * @return array An array with [logFile, logPos]
      */
-    public function getMasterStatus(string $remote, string $sourceJail): array
-    {
-        echo "⚙️ [STEP] Fetch MySQL binary log file and position from primary...\n";
+    // public function getMasterStatus(string $remote, string $sourceJail): array
+    // {
+    //     $output = $this->shell->shell(
+    //         "ssh {$this->sshKey} {$remote} \"sudo iocage exec {$sourceJail} /usr/local/bin/mysql -e 'SHOW MASTER STATUS\\G'\"",
+    //         "Fetch MySQL binary log file and position from primary.."
+    //     );
 
-        $cmd = "ssh {$this->sshKey} {$remote} \"sudo iocage exec {$sourceJail} /usr/local/bin/mysql -e 'SHOW MASTER STATUS\\G'\"";
-        $output = shell_exec($cmd);
+    //     if (!$output) {
+    //         throw new \RuntimeException("Failed to retrieve master status from source MySQL server.");
+    //     }
+
+    //     $logFile = null;
+    //     $logPos = null;
+
+    //     if (!preg_match('/File:\s+(\\S+)/', $output, $f) || !preg_match('/Position:\s+(\\d+)/', $output, $p)) {
+    //         throw new \RuntimeException("Could not parse log file and position from master status output.");
+    //     } else {
+    //         $logFile = $f[1];
+    //         $logPos = $p[1];
+
+    //         echo "🔢 Binlog: {$logFile}, Position: {$logPos}\n";
+    //     }
+
+    //     return [$logFile, $logPos];
+    // }
+
+    /**
+     * Retrieve the current binary log file and position from the source MySQL server.
+     * Inject replication config SQL
+     *
+     * @param string $remote The SSH user@host of the source server
+     * @param string $sourceJail The source jail name running MySQL
+     * @param string $replicaJail The replica jail name running MySQL
+     * @param string $remoteHostOnly remote host address
+     */
+    private function injectReplicationSQL(string $remote, string $sourceJail, string $replicaJail, string $remoteHostOnly): void
+    {
+        $output = $this->shell->shell(
+            "ssh {$this->sshKey} {$remote} \"sudo iocage exec {$sourceJail} /usr/local/bin/mysql -e 'SHOW MASTER STATUS\\G'\"",
+            "Fetch MySQL binary log file and position from primary..."
+        );
 
         if (!$output) {
             throw new \RuntimeException("Failed to retrieve master status from source MySQL server.");
         }
 
-        $logFile = null;
-        $logPos = null;
-
-        foreach (explode("\n", $output) as $line) {
-            if (str_starts_with(trim($line), 'File:')) {
-                $logFile = trim(explode(':', $line, 2)[1]);
-            }
-            if (str_starts_with(trim($line), 'Position:')) {
-                $logPos = (int) trim(explode(':', $line, 2)[1]);
-            }
-        }
-
-        if (!$logFile || !$logPos) {
+        if (!preg_match('/File:\s+(\S+)/', $output, $f) || !preg_match('/Position:\s+(\d+)/', $output, $p)) {
             throw new \RuntimeException("Could not parse log file and position from master status output.");
         }
 
+        $logFile = $f[1];
+        $logPos = $p[1];
+
         echo "🔢 Binlog: {$logFile}, Position: {$logPos}\n";
 
-        return [$logFile, $logPos];
+        $sql = <<<EOD
+    STOP REPLICA;
+    RESET REPLICA ALL;
+    CHANGE MASTER TO
+    MASTER_HOST='$remoteHostOnly',
+    MASTER_USER='repl',
+    MASTER_PASSWORD='replica_pass',
+    MASTER_LOG_FILE='$logFile',
+    MASTER_LOG_POS=$logPos,
+    MASTER_SSL=1,
+    MASTER_SSL_CA='/var/db/mysql/certs/ca.pem',
+    MASTER_SSL_CERT='/var/db/mysql/certs/client-cert.pem',
+    MASTER_SSL_KEY='/var/db/mysql/certs/client-key.pem';
+    START REPLICA;
+    SHOW REPLICA STATUS\G;
+    EOD;
+
+        file_put_contents('/tmp/replica_setup.sql', $sql);
+
+        $this->shell->run(
+            "sudo iocage exec {$replicaJail} /usr/local/bin/mysql < /tmp/replica_setup.sql",
+            "Configure replication (inject SQL)"
+        );
+
+        @unlink('/tmp/replica_setup.sql');
     }
+
 }

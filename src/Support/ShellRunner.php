@@ -64,14 +64,20 @@ class ShellRunner
     }
 
     /**
-     * Run a shell command silently and return raw output (like shell_exec).
+     * Run a shell and return raw output.
      *
      * @param string $cmd
      *
      * @return string|null Output or null if failed
      */
-    public function shell(string $cmd): ?string
+    public function shell(string $cmd, ?string $desc = null): ?string
     {
+        if ($desc) {
+            echo "\n⚙️ [STEP] {$desc} \n";
+        }
+
+        echo "➡️ [CMD] {$cmd}\n";
+
         if ($this->dryRun) {
             echo "🔇 [DRY-RUN] Skipping shell_exec: {$cmd}\n";
             return "[DRY-RUN] (shell)";
