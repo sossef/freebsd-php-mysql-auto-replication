@@ -30,7 +30,7 @@ class ReplicatorFactory
         $sshKey = '-i ~/.ssh/id_digitalocean';
 
         // Use LocalReplicator if source is on localhost and an SSH username is present (e.g., localhost@jail@snapshot)
-        if (str_starts_with($from, 'localhost:') && str_contains($from, '@')) {
+        if (str_starts_with($from, 'localhost:')) {
             return new LocalReplicator($from, $to, $force, $dryRun, $skipTest, $sshKey);
         }
 
