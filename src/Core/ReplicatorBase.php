@@ -147,7 +147,7 @@ abstract class ReplicatorBase
         $this->sshKey = $sshKey;
 
         $this->shell = new ShellRunner($this->dryRun);
-        $this->zfs = new ZfsSnapshotManager($this->shell, $this->sshKey);
+        $this->zfs = new ZfsSnapshotManager($this->shell, $this->sshKey, new IocageJailDriver($this->shell));
         $this->jails = new JailManager(new IocageJailDriver($this->shell));
         $this->configurator = new JailConfigurator($this->shell);
         $this->certs = new CertManager($this->shell, $this->sshKey);

@@ -35,7 +35,11 @@ class ZfsSnapshotManager
      * @param ShellRunner $shell
      * @param string $sshKey
      */
-    public function __construct(ShellRunner $shell, string $sshKey)
+    public function __construct(
+        ShellRunner $shell,
+        string $sshKey,
+        protected JailDriverInterface $jail
+    )
     {
         $this->shell = $shell;
         $this->sshKey = $sshKey;
@@ -62,8 +66,9 @@ class ZfsSnapshotManager
         $mysqlBinPath = \Config::get('MYSQL_BIN_PATH');
 
         // Step 1: Capture master status
-        $cmdMasterStatus = "ssh -i {$this->sshKey} {$remote} \"sudo iocage exec {$jailName} {$mysqlBinPath} -N -e 'SHOW MASTER STATUS'\"";
-        $output = $this->shell->shell($cmdMasterStatus, "Fetch MySQL master status on {$jailName}");
+        // $cmdMasterStatus = "ssh -i {$this->sshKey} {$remote} \"sudo iocage exec {$jailName} {$mysqlBinPath} -N -e 'SHOW MASTER STATUS'\"";
+        // $output = $this->shell->shell($cmdMasterStatus, "Fetch MySQL master status on {$jailName}");
+        $output = $this->jail->execMySQLRemote($remote, $this->sshKey, $jailName, 'SHOW MASTER STATUS');
         $lines = explode("\n", trim($output));
 
         if (count($lines) < 1 || !str_contains($lines[0], "\t")) {

@@ -98,4 +98,39 @@ class IocageJailDriver implements JailDriverInterface
             throw new RuntimeException("❌ Jail root '{$rootPath}' does not exist after snapshot transfer.");
         }
     }
+
+    public function exec(string $jailName, string $command): string
+    {
+        return $this->shell->shell(
+            "sudo iocage exec {$jailName} {$command}",
+            "Execute inside jail '{$jailName}'"
+        );
+    }
+
+    public function execMySQLRemote(string $remoteHost, string $sshKey, string $jailName, string $query): string
+    {
+        $bin = \Config::get('MYSQL_BIN_PATH');
+
+        $cmd = <<<EOD
+        ssh -i {$sshKey} {$remoteHost} "sudo iocage exec {$jailName} {$bin} -N -e '{$query}'"
+        EOD;
+
+        return $this->shell->shell($cmd, "Run MySQL remotely in jail '{$jailName}'");
+    }
+
+    public function runService(string $jailName, string $service, string $action): void
+    {
+        $this->shell->run(
+            "sudo iocage exec {$jailName} service {$service} {$action}",
+            "Run service '{$service} {$action}' in jail '{$jailName}'"
+        );
+    }
+
+    public function removeFile(string $jailName, string $filePath): void
+    {
+        $this->shell->run(
+            "sudo iocage exec {$jailName} rm -f {$filePath}",
+            "Remove file '{$filePath}' in jail '{$jailName}'"
+        );
+    }
 }
