@@ -213,13 +213,8 @@ abstract class ReplicatorBase
         echo "\n✅ Replica setup complete and replication initialized.\n\n";
     }
 
-    protected function loadMetaData(): void
+    protected function loadMetaData(string $snapshotName): void
     {
-        if (!str_starts_with($this->from, 'localhost:')) {
-            return; // meta data only used in local replication
-        }
-
-        [, $snapshotName] = explode(':', $this->from);
         $metaPath = "/tank/backups/iocage/jail/{$snapshotName}.meta";
 
         if (!file_exists($metaPath)) {
