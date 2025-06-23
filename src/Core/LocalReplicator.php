@@ -21,6 +21,11 @@ class LocalReplicator extends ReplicatorBase
         // For local replication, the source jail string actually contains the snapshot name
         $snapshot = $this->sourceJail;
 
+        $this->zfs->receiveSnapshotFromLocal(
+            $snapshot,
+            $this->replicaJail
+        );
+
         // Validate that both .zfs and .meta files exist locally in /tank/backups/iocage/jail/
         $this->zfs->verifyLocalSnapshot($snapshot);
 

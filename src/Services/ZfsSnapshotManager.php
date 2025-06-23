@@ -119,6 +119,20 @@ class ZfsSnapshotManager
         );
     }
 
+    public function receiveSnapshotFromLocal(
+        string $snapshotName,
+        string $targetJailName
+    ): void {
+        $localPath = "/tank/backups/iocage/jail";
+        $zfsFile = "{$snapshotName}.zfs";
+
+        // Step 2: Receive snapshot from .zfs file
+        $this->shell->run(
+            "sudo zfs receive -F tank/iocage/jails/{$targetJailName} < {$localPath}/{$zfsFile}",
+            "Receive snapshot into jail {$targetJailName}"
+        );
+    }
+
     /**
      * Verify that the snapshot exists on the remote system.
      *
