@@ -43,11 +43,11 @@ class CertManager
      */
     public function transferCerts(string $remote, string $sourceJail, string $replicaJail): void
     {
-        $replicaRoot = "/tank/iocage/jails/{$replicaJail}/root";
+        $replicaRoot = "{/tank/iocage/jails}/{$replicaJail}/root";
         $certTarget = "{$replicaRoot}/var/db/mysql/certs";
 
         $this->shell->run(
-            "scp {$this->sshKey} {$remote}:/tmp/ssl_certs_primary/*.pem /tmp/",
+            "scp -i {$this->sshKey} {$remote}:/tmp/ssl_certs_primary/*.pem /tmp/",
             "Copy SSL certs from remote primary jail"
         );
 
@@ -70,18 +70,7 @@ class CertManager
             "sudo chmod 600 {$certTarget}/*.pem",
             "Restrict cert file permissions"
         );
-    }
-
-    // public function transferCertsFromLocal(string $replicaJail): void
-    // {
-    //     $certSource = "/usr/local/share/mysql_certs/primary/*.pem";
-    //     $certTarget = "/tank/iocage/jails/{$replicaJail}/root/var/db/mysql/certs";
-
-    //     $this->shell->run("sudo mkdir -p {$certTarget}", "Create cert target directory in replica jail");
-    //     $this->shell->run("sudo cp {$certSource} {$certTarget}/", "Copy certs to replica jail");
-    //     $this->shell->run("sudo chown 88:88 {$certTarget}/*.pem", "Set MySQL user:group ownership on certs");
-    //     $this->shell->run("sudo chmod 600 {$certTarget}/*.pem", "Restrict cert file permissions");
-    // }
+    }   
 
     public function transferCertsFromLocal(string $replicaJail): void
     {
