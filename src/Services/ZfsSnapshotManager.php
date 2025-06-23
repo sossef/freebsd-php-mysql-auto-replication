@@ -85,7 +85,7 @@ class ZfsSnapshotManager
         ));
         // Write meta file
         $this->shell->run(
-            "ssh {$this->sshKey} {$remote} \"echo '{$logFile}' > /tmp/{$snapshotName}.meta && echo '{$logPos}' >> /tmp/{$snapshotName}.meta && echo '{$primaryIp}' >> /tmp/{$snapshotName}.meta && sudo mv /tmp/{$snapshotName}.meta {$metaFile}\"",
+            "ssh {$this->sshKey} {$remote} \"echo '{$logFile}' > /tmp/{$snapshotName}.meta && echo '{$logPos}' >> /tmp/{$snapshotName}.meta && echo '{$primaryIp}' >> /tmp/{$snapshotName}.meta && echo '{$jailName}' >> /tmp/{$snapshotName}.meta && sudo mv /tmp/{$snapshotName}.meta {$metaFile}\"",
             "Write binlog metadata to {$metaFile}"
         );
 

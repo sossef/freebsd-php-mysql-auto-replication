@@ -205,6 +205,7 @@ abstract class ReplicatorBase
         // Step 6: Replication testing
         $this->verifier->verify(
             $this->meta->masterHost,
+            $this->meta->masterJailName,
             $this->sourceJail,
             $this->replicaJail,
             $this->skipTest
@@ -230,10 +231,11 @@ abstract class ReplicatorBase
         $masterLogFile = trim($lines[0]);
         $masterLogPos = (int) trim($lines[1]);
         $masterHost = trim($lines[2]);
+        $masterJailName = trim($lines[3]);
 
-        $this->meta = new MetaInfo($masterLogFile, $masterLogPos, $masterHost);
+        $this->meta = new MetaInfo($masterLogFile, $masterLogPos, $masterHost, $masterJailName);
 
-        echo "🔢 Binlog: {$this->meta->masterLogFile}, Position: {$this->meta->masterLogPos}, Host: {$this->meta->masterHost}\n";
+        echo "🔢 Binlog: {$this->meta->masterLogFile}, Position: {$this->meta->masterLogPos}, Host: {$this->meta->masterHost}, Jail: {$this->meta->masterJailName}\n";
     }
 
     /**

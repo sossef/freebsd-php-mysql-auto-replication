@@ -19,7 +19,8 @@ class ReplicationVerifier
     }
 
     public function verify(
-        string $remoteHostOnly,
+        string $masterHost,
+        string $masterJailName,
         string $sourceJail,
         string $replicaJail,
         bool $skipTest = false
@@ -44,7 +45,7 @@ class ReplicationVerifier
         INSERT INTO ping (msg) VALUES ('replication check @ $date');
         SQL;
 
-        $insertCmd = "echo \"$testInsert\" | ssh {$this->sshKey} {$remoteHostOnly} \"sudo iocage exec {$sourceJail} /usr/local/bin/mysql\"";
+        $insertCmd = "echo \"$testInsert\" | ssh {$this->sshKey} {$masterHost} \"sudo iocage exec {$masterJailName} /usr/local/bin/mysql\"";
         $this->shell->run($insertCmd, "Insert test row on primary");
 
         sleep(4);
