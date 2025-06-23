@@ -162,8 +162,10 @@ class MySqlConfigurator
 
         file_put_contents('/tmp/replica_setup.sql', $sql);
 
+        $mysqlBinPath = \Config::get('MYSQL_BIN_PATH');
+
         $this->shell->run(
-            "sudo iocage exec {$replicaJail} /usr/local/bin/mysql < /tmp/replica_setup.sql",
+            "sudo iocage exec {$replicaJail} {$mysqlBinPath} < /tmp/replica_setup.sql",
             "Configure replication (inject SQL)"
         );
 

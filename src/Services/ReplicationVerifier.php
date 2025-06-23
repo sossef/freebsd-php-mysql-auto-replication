@@ -45,7 +45,9 @@ class ReplicationVerifier
         INSERT INTO ping (msg) VALUES ('replication check @ $date');
         SQL;
 
-        $insertCmd = "echo \"$testInsert\" | ssh -i {$this->sshKey} {$masterHost} \"sudo iocage exec {$masterJailName} /usr/local/bin/mysql\"";
+        $mysqlBinPath = \Config::get('MYSQL_BIN_PATH');
+
+        $insertCmd = "echo \"$testInsert\" | ssh -i {$this->sshKey} {$masterHost} \"sudo iocage exec {$masterJailName} {$mysqlBinPath}\"";
         $this->shell->run($insertCmd, "Insert test row on primary");
 
         sleep(4);
@@ -54,7 +56,7 @@ class ReplicationVerifier
         SELECT msg FROM testdb.ping WHERE msg = "replication check @ $date";
         SQL;
 
-        $check = shell_exec("sudo iocage exec {$replicaJail} /usr/local/bin/mysql -e '{$testSelect}'");
+        $check = shell_exec("sudo iocage exec {$replicaJail} {$mysqlBinPath} -e '{$testSelect}'");
         if (!str_contains($check ?? '', 'replication check')) {
             throw new RuntimeException("❌ Replication test failed. Test row not found in replica.");
         }

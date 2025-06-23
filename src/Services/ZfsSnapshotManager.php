@@ -59,9 +59,10 @@ class ZfsSnapshotManager
         $snapshotFull = "{$this->jailsDatasetPath}/{$jailName}@{$snapshotSuffix}";
         $zfsFile = "{$remoteBackupDir}/{$snapshotName}.zfs";
         $metaFile = "{$remoteBackupDir}/{$snapshotName}.meta";
+        $mysqlBinPath = \Config::get('MYSQL_BIN_PATH');
 
         // Step 1: Capture master status
-        $cmdMasterStatus = "ssh -i {$this->sshKey} {$remote} \"sudo iocage exec {$jailName} /usr/local/bin/mysql -N -e 'SHOW MASTER STATUS'\"";
+        $cmdMasterStatus = "ssh -i {$this->sshKey} {$remote} \"sudo iocage exec {$jailName} {$mysqlBinPath} -N -e 'SHOW MASTER STATUS'\"";
         $output = $this->shell->shell($cmdMasterStatus, "Fetch MySQL master status on {$jailName}");
         $lines = explode("\n", trim($output));
 
