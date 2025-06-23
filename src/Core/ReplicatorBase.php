@@ -229,11 +229,11 @@ abstract class ReplicatorBase
 
         $masterLogFile = trim($lines[0]);
         $masterLogPos = (int) trim($lines[1]);
-        $primaryHost = trim($lines[2]);
+        $masterHost = trim($lines[2]);
 
-        $this->meta = new MetaInfo($masterLogFile, $masterLogPos, $primaryHost);
+        $this->meta = new MetaInfo($masterLogFile, $masterLogPos, $masterHost);
 
-        echo "🔢 Binlog: {$this->meta->masterLogFile}, Position: {$this->meta->masterLogPos}, Host: {$this->meta->primaryHost}\n";
+        echo "🔢 Binlog: {$this->meta->masterLogFile}, Position: {$this->meta->masterLogPos}, Host: {$this->meta->masterHost}\n";
     }
 
     /**
