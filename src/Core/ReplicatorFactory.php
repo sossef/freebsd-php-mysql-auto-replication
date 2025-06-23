@@ -2,6 +2,8 @@
 
 namespace Monsefrachid\MysqlReplication\Core;
 
+use Monsefrachid\MysqlReplication\Core\ReplicatorBase;
+
 /**
  * Factory class responsible for instantiating the appropriate
  * Replicator subclass (RemoteReplicator or LocalReplicator)
