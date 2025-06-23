@@ -26,7 +26,7 @@ class LocalReplicator extends ReplicatorBase
             $this->replicaJail
         );
 
-        // Validate that both .zfs and .meta files exist locally in /tank/backups/iocage/jail/
+        // Validate that both .zfs and .meta files exist locally in snapshot backup folder
         $this->zfs->verifyLocalSnapshot($snapshot);
 
         return $snapshot;

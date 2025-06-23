@@ -184,8 +184,6 @@ class MySqlConfigurator
 
     private function injectReplicationSQL(string $replicaJail, string $snapshotName, MetaInfo $meta): void
     {
-        echo "\n\ninjectReplicationSQL : " . \Config::get('SNAPSHOT_BACKUP_DIR') . "\n\n";
-
         $sql = <<<EOD
         STOP REPLICA;
         RESET REPLICA ALL;
@@ -212,27 +210,4 @@ class MySqlConfigurator
 
         @unlink('/tmp/replica_setup.sql');
     }
-
-    // private function getMetaData(string $snapshotName): array
-    // {
-    //     $metaPath = "/tank/backups/iocage/jail/{$snapshotName}.meta";
-
-    //     if (!file_exists($metaPath)) {
-    //         throw new \RuntimeException("Meta file not found at: {$metaPath}");
-    //     }
-
-    //     $lines = file($metaPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-
-    //     if (count($lines) < 3) {
-    //         throw new \RuntimeException("Meta file must contain at least 3 lines (log file, log position, and primary host).");
-    //     }
-
-    //     $masterLogFile = trim($lines[0]);
-    //     $masterLogPos = (int) trim($lines[1]);
-    //     $masterHost = trim($lines[2]);
-
-    //     echo "🔢 Binlog: {$masterLogFile}, Position: {$masterLogPos}, Host: {$masterHost}\n";
-
-    //     return [$masterLogFile, $masterLogPos, $masterHost];
-    // }
 }

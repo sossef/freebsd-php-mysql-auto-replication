@@ -26,6 +26,13 @@ class ZfsSnapshotManager
     private string $sshKey;
 
     /**
+     * SSH identity key to use with remote commands
+     *
+     * @var string
+     */
+    private string $snapshotBackupLocation;    
+
+    /**
      * Constructor
      *
      * @param ShellRunner $shell
@@ -35,6 +42,7 @@ class ZfsSnapshotManager
     {
         $this->shell = $shell;
         $this->sshKey = $sshKey;
+        $this->snapshotBackupLocation = \Config::get('SNAPSHOT_BACKUP_DIR');
     }
 
     /**
@@ -49,7 +57,7 @@ class ZfsSnapshotManager
     public function createRemoteSnapshot(string $remote, string $jailName, string $snapshotSuffix): string
     {
         $snapshotName = "{$jailName}_{$snapshotSuffix}";
-        $remoteBackupDir = "/tank/backups/iocage/jail";
+        $remoteBackupDir = $this->snapshotBackupLocation;
         $snapshotFull = "tank/iocage/jails/{$jailName}@{$snapshotSuffix}";
         $zfsFile = "{$remoteBackupDir}/{$snapshotName}.zfs";
         $metaFile = "{$remoteBackupDir}/{$snapshotName}.meta";
@@ -107,8 +115,8 @@ class ZfsSnapshotManager
         string $snapshotName,
         string $targetJailName
     ): void {
-        $remotePath = "/tank/backups/iocage/jail";
-        $localPath = "/tank/backups/iocage/jail";
+        $remotePath = $this->snapshotBackupLocation;
+        $localPath = $this->snapshotBackupLocation;
         $zfsFile = "{$snapshotName}.zfs";
         $metaFile = "{$snapshotName}.meta";
 
@@ -129,7 +137,7 @@ class ZfsSnapshotManager
         string $snapshotName,
         string $targetJailName
     ): void {
-        $localPath = "/tank/backups/iocage/jail";
+        $localPath = $this->snapshotBackupLocation;
         $zfsFile = "{$snapshotName}.zfs";
 
         // Step 2: Receive snapshot from .zfs file
@@ -149,7 +157,7 @@ class ZfsSnapshotManager
      */
     public function verifyRemoteSnapshot(string $remote, string $snapshotName): void
     {
-        $base = "/tank/backups/iocage/jail/{$snapshotName}";
+        $base = "{$this->snapshotBackupLocation}/{$snapshotName}";
         $cmd = "[ -f {$base}.zfs ] && [ -f {$base}.meta ]";
         $this->shell->run(
             "ssh {$this->sshKey} {$remote} '{$cmd}'",
@@ -166,7 +174,7 @@ class ZfsSnapshotManager
      */
     public function verifyLocalSnapshot(string $snapshotName): void
     {
-        $base = "/tank/backups/iocage/jail/{$snapshotName}";
+        $base = "{$this->snapshotBackupLocation}/{$snapshotName}";
         if (!file_exists("{$base}.zfs") || !file_exists("{$base}.meta")) {
             throw new RuntimeException("❌ Local snapshot verification failed: missing .zfs or .meta for '{$snapshotName}'");
         }

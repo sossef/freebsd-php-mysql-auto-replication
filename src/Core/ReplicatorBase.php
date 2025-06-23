@@ -216,7 +216,9 @@ abstract class ReplicatorBase
 
     protected function loadMetaData(string $snapshotName): void
     {
-        $metaPath = "/tank/backups/iocage/jail/{$snapshotName}.meta";
+        $snapshotBackupLocation = \Config::get('SNAPSHOT_BACKUP_DIR');
+
+        $metaPath = "{$snapshotBackupLocation}/{$snapshotName}.meta";
 
         if (!file_exists($metaPath)) {
             throw new \RuntimeException("Meta file not found at: {$metaPath}");
@@ -237,46 +239,4 @@ abstract class ReplicatorBase
 
         echo "🔢 Binlog: {$this->meta->masterLogFile}, Position: {$this->meta->masterLogPos}, Host: {$this->meta->masterHost}, Jail: {$this->meta->masterJailName}\n";
     }
-
-    /**
-     * Get primary host name or IP
-     *
-     * @return string
-     */
-    // private function getRemoteHostOnly(): string
-    // {
-    //     // Expects format user@host
-    //     [, $host] = explode('@', $this->from);
-    //     return $host;
-    // }
-
-    // protected function getPrimaryHost(): string
-    // {
-    //     if ($this->primaryIp !== null) {
-    //         return $this->primaryIp;
-    //     }
-
-    //     if (str_starts_with($this->from, 'localhost:')) {
-    //         // Local: parse .meta file
-    //         [, $snapshot] = explode(':', $this->from);
-    //         $metaPath = "/tank/backups/iocage/jail/{$snapshot}.meta";
-
-    //         if (!file_exists($metaPath)) {
-    //             throw new \RuntimeException("Meta file not found at {$metaPath}");
-    //         }
-
-    //         $lines = file($metaPath, FILE_IGNORE_NEW_LINES);
-    //         if (count($lines) < 3) {
-    //             throw new \RuntimeException("Meta file is missing primary host address on line 3.");
-    //         }
-
-    //         $this->primaryHost = trim($lines[2]);
-    //         return $this->primaryIp;
-    //     }
-
-    //     // Remote: extract host from user@host
-    //     [, $host] = explode('@', $this->from);
-    //     $this->primaryHost = $host;
-    //     return $host;
-    // }
 }
