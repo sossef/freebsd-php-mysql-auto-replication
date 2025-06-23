@@ -9,7 +9,7 @@ use Monsefrachid\MysqlReplication\Core\ReplicatorBase;
  *
  * This is useful when the snapshot was transferred or created manually on the local machine.
  */
-class LocalReplicator extends Replicator
+class LocalReplicator extends ReplicatorBase
 {
     /**
      * Verifies that the local snapshot and metadata files exist.

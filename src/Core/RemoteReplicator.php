@@ -12,7 +12,7 @@ use Monsefrachid\MysqlReplication\Core\ReplicatorBase;
  * - Ensuring .zfs and .meta files are generated
  * - Verifying the snapshot and metadata exist remotely
  */
-class RemoteReplicator extends Replicator
+class RemoteReplicator extends ReplicatorBase
 {
     /**
      * Creates and verifies the remote snapshot for replication.
