@@ -43,7 +43,7 @@ class MySqlConfigurator
      *
      * @return void
      */
-    public function configure(string $replicaJail, string $snapshotName): void
+    public function configure(string $replicaJail, string $snapshotName, array $masterData): void
     {
         $replicaRoot = "/tank/iocage/jails/{$replicaJail}/root";
         $mycnfPath = "{$replicaRoot}/usr/local/etc/mysql/my.cnf";
@@ -97,8 +97,7 @@ class MySqlConfigurator
             "Start MySQL in replica jail"
         );
 
-        //$this->injectReplicationSQL($remote, $sourceJail, $replicaJail, $remoteHostOnly);
-        $this->injectReplicationSQL($replicaJail, $snapshotName);
+        $this->injectReplicationSQL($replicaJail, $snapshotName, $meta);
     }
 
     /**
@@ -182,19 +181,17 @@ class MySqlConfigurator
         @unlink('/tmp/replica_setup.sql');
     }
 
-    private function injectReplicationSQL(string $replicaJail, string $snapshotName): void
+    private function injectReplicationSQL(string $replicaJail, string $snapshotName, MetaInfo $meta): void
     {
-        [$masterLogFile, $masterLogPos, $masterHost] = $this->getMetaData($snapshotName);
-
         $sql = <<<EOD
         STOP REPLICA;
         RESET REPLICA ALL;
         CHANGE MASTER TO
-        MASTER_HOST='$masterHost',
+        MASTER_HOST='{$meta->masterHost}',
         MASTER_USER='repl',
         MASTER_PASSWORD='replica_pass',
-        MASTER_LOG_FILE='$masterLogFile',
-        MASTER_LOG_POS=$masterLogPos,
+        MASTER_LOG_FILE='{$meta->masterLogFile}',
+        MASTER_LOG_POS={$meta->masterLogPos},
         MASTER_SSL=1,
         MASTER_SSL_CA='/var/db/mysql/certs/ca.pem',
         MASTER_SSL_CERT='/var/db/mysql/certs/client-cert.pem',
@@ -213,27 +210,26 @@ class MySqlConfigurator
         @unlink('/tmp/replica_setup.sql');
     }
 
+    // private function getMetaData(string $snapshotName): array
+    // {
+    //     $metaPath = "/tank/backups/iocage/jail/{$snapshotName}.meta";
 
-    private function getMetaData(string $snapshotName): array
-    {
-        $metaPath = "/tank/backups/iocage/jail/{$snapshotName}.meta";
+    //     if (!file_exists($metaPath)) {
+    //         throw new \RuntimeException("Meta file not found at: {$metaPath}");
+    //     }
 
-        if (!file_exists($metaPath)) {
-            throw new \RuntimeException("Meta file not found at: {$metaPath}");
-        }
+    //     $lines = file($metaPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
 
-        $lines = file($metaPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    //     if (count($lines) < 3) {
+    //         throw new \RuntimeException("Meta file must contain at least 3 lines (log file, log position, and primary host).");
+    //     }
 
-        if (count($lines) < 2) {
-            throw new \RuntimeException("Meta file must contain at least 2 lines (log file and log position).");
-        }
+    //     $masterLogFile = trim($lines[0]);
+    //     $masterLogPos = (int) trim($lines[1]);
+    //     $masterHost = trim($lines[2]);
 
-        $masterLogFile = trim($lines[0]);
-        $masterLogPos = (int) trim($lines[1]);
-        $masterHost = trim($lines[2]);
+    //     echo "🔢 Binlog: {$masterLogFile}, Position: {$masterLogPos}, Host: {$masterHost}\n";
 
-        echo "🔢 Binlog: {$masterLogFile}, Position: {$masterLogPos}, Host: {$masterHost}\n";
-
-        return [$masterLogFile, $masterLogPos, $masterHost];
-    }
+    //     return [$masterLogFile, $masterLogPos, $masterHost];
+    // }
 }

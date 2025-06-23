@@ -3,6 +3,7 @@
 namespace Monsefrachid\MysqlReplication\Core;
 
 use Monsefrachid\MysqlReplication\Support\ShellRunner;
+use Monsefrachid\MysqlReplication\Support\MetaInfo;
 use Monsefrachid\MysqlReplication\Services\ZfsSnapshotManager;
 use Monsefrachid\MysqlReplication\Services\JailManager;
 use Monsefrachid\MysqlReplication\Services\IocageJailDriver;
@@ -67,6 +68,8 @@ abstract class ReplicatorBase
      * @var bool
      */
     protected bool $skipTest;
+
+    protected ?MetaInfo $meta = null;
 
     /**
      * Handles shell command execution
@@ -191,33 +194,92 @@ abstract class ReplicatorBase
         //$this->certs->transferCerts($this->from, $this->sourceJail, $this->replicaJail);
         $this->transferCertificates();
 
-        // Step 5: Configure replica's my.cnf, restart MySQL and get master log info
+        // Step 5: Load meta data and configure replica's my.cnf, restart MySQL
+        $this->loadMetaData();
         $this->mysql->configure(
             $this->replicaJail,
-            $snapshot
+            $snapshot,
+            $this->meta
         );
 
         // Step 6: Replication testing
-        // $this->verifier->verify(
-        //     $this->getRemoteHostOnly(),
-        //     $this->sourceJail,
-        //     $this->replicaJail,
-        //     $this->skipTest
-        // );
+        $this->verifier->verify(
+            $this->masterHost,
+            $this->sourceJail,
+            $this->replicaJail,
+            $this->skipTest
+        );
 
         echo "\n✅ Replica setup complete and replication initialized.\n\n";
     }
 
+    protected function loadMetaData(): void
+    {
+        if (!str_starts_with($this->from, 'localhost:')) {
+            return; // meta data only used in local replication
+        }
+
+        [, $snapshotName] = explode(':', $this->from);
+        $metaPath = "/tank/backups/iocage/jail/{$snapshotName}.meta";
+
+        if (!file_exists($metaPath)) {
+            throw new \RuntimeException("Meta file not found at: {$metaPath}");
+        }
+
+        $lines = file($metaPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+
+        if (count($lines) < 3) {
+            throw new \RuntimeException("Meta file must contain at least 3 lines (log file, log position, and primary IP).");
+        }
+
+        $masterLogFile = trim($lines[0]);
+        $masterLogPos = (int) trim($lines[1]);
+        $primaryHost = trim($lines[2]);
+
+        $this->meta = new MetaInfo($masterLogFile, $masterLogPos, $primaryHost);
+
+        echo "🔢 Binlog: {$this->meta->masterLogFile}, Position: {$this->meta->masterLogPos}, Host: {$this->meta->primaryHost}\n";
+    }
 
     /**
-     * Extracts only the host portion from the $from value (e.g., user@host).
+     * Get primary host name or IP
      *
      * @return string
      */
-    private function getRemoteHostOnly(): string
-    {
-        // Expects format user@host
-        [, $host] = explode('@', $this->from);
-        return $host;
-    }
+    // private function getRemoteHostOnly(): string
+    // {
+    //     // Expects format user@host
+    //     [, $host] = explode('@', $this->from);
+    //     return $host;
+    // }
+
+    // protected function getPrimaryHost(): string
+    // {
+    //     if ($this->primaryIp !== null) {
+    //         return $this->primaryIp;
+    //     }
+
+    //     if (str_starts_with($this->from, 'localhost:')) {
+    //         // Local: parse .meta file
+    //         [, $snapshot] = explode(':', $this->from);
+    //         $metaPath = "/tank/backups/iocage/jail/{$snapshot}.meta";
+
+    //         if (!file_exists($metaPath)) {
+    //             throw new \RuntimeException("Meta file not found at {$metaPath}");
+    //         }
+
+    //         $lines = file($metaPath, FILE_IGNORE_NEW_LINES);
+    //         if (count($lines) < 3) {
+    //             throw new \RuntimeException("Meta file is missing primary host address on line 3.");
+    //         }
+
+    //         $this->primaryHost = trim($lines[2]);
+    //         return $this->primaryIp;
+    //     }
+
+    //     // Remote: extract host from user@host
+    //     [, $host] = explode('@', $this->from);
+    //     $this->primaryHost = $host;
+    //     return $host;
+    // }
 }
