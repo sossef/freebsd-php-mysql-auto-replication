@@ -46,7 +46,7 @@ class MySqlConfigurator
      */
     public function configure(string $replicaJail, string $snapshotName, MetaInfo $meta): void
     {
-        $replicaRoot = "/tank/iocage/jails/{$replicaJail}/root";
+        $replicaRoot = \Config::get('DEFAULT_JAILS_BASE') . "/{$replicaJail}/root";
         $mycnfPath = "{$replicaRoot}/usr/local/etc/mysql/my.cnf";
 
         // Modify config contents (only in non-dry-run mode)
@@ -110,7 +110,7 @@ class MySqlConfigurator
     {
         $ids = [];
 
-        foreach (glob('/tank/iocage/jails/*/root/usr/local/etc/mysql/my.cnf') as $file) {
+        foreach (glob(\Config::get('DEFAULT_JAILS_BASE') . '/*/root/usr/local/etc/mysql/my.cnf') as $file) {
             $text = file_get_contents($file);
             if (preg_match('/server-id\s*=\s*(\d+)/i', $text, $m)) {
                 $ids[] = (int)$m[1];
