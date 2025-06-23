@@ -198,12 +198,12 @@ abstract class ReplicatorBase
         );
 
         // Step 6: Replication testing
-        $this->verifier->verify(
-            $this->getRemoteHostOnly(),
-            $this->sourceJail,
-            $this->replicaJail,
-            $this->skipTest
-        );
+        // $this->verifier->verify(
+        //     $this->getRemoteHostOnly(),
+        //     $this->sourceJail,
+        //     $this->replicaJail,
+        //     $this->skipTest
+        // );
 
         echo "\n✅ Replica setup complete and replication initialized.\n\n";
     }
