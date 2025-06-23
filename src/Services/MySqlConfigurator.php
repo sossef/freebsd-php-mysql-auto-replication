@@ -237,5 +237,4 @@ class MySqlConfigurator
 
         return [$logFile, $logPos];
     }
-
 }

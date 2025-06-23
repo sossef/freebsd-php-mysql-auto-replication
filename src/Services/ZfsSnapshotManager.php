@@ -137,6 +137,22 @@ class ZfsSnapshotManager
         );
     }
 
+    /**
+     * Verify that the snapshot exists on in local backup folder.
+     *
+     * @param string $snapshotName
+     *
+     * @return void
+     */
+    public function verifyLocalSnapshot(string $snapshotName): void
+    {
+        $base = "/tank/backups/iocage/jail/{$snapshotName}";
+        if (!file_exists("{$base}.zfs") || !file_exists("{$base}.meta")) {
+            throw new RuntimeException("❌ Local snapshot verification failed: missing .zfs or .meta for '{$snapshotName}'");
+        }
+
+        echo "✅ Local snapshot and metadata verified for '{$snapshotName}'\n";
+    }
 
     // Deprecated but preserved for fallback/alternate use
 
