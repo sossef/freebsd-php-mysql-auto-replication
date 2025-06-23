@@ -2,6 +2,8 @@
 
 namespace Monsefrachid\MysqlReplication\Core;
 
+use Monsefrachid\MysqlReplication\Core\ReplicatorBase;
+
 /**
  * Handles replication from a remote MySQL jail.
  *
