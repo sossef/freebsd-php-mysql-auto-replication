@@ -23,6 +23,8 @@ class MySqlConfigurator
      */
     private string $sshKey;
 
+    private string $dbSslPath;
+
     /**
      * Constructor
      *
@@ -33,6 +35,7 @@ class MySqlConfigurator
     {
         $this->shell = $shell;
         $this->sshKey = $sshKey;
+        $this->dbSslPath = \Config::get('DB_SSL_PATH');
     }
 
     /**
@@ -71,8 +74,8 @@ class MySqlConfigurator
             }
 
             // Set SSL cert/key paths
-            $content = preg_replace('/ssl-cert\s*=.*/i', 'ssl-cert=/var/db/mysql/certs/client-cert.pem', $content);
-            $content = preg_replace('/ssl-key\s*=.*/i', 'ssl-key=/var/db/mysql/certs/client-key.pem', $content);
+            $content = preg_replace('/ssl-cert\s*=.*/i', "ssl-cert={$this->dbSslPath}/client-cert.pem", $content);
+            $content = preg_replace('/ssl-key\s*=.*/i', "ssl-key={$this->dbSslPath}/client-key.pem", $content);
 
             // Add relay-log if not present
             if (!preg_match('/relay-log\s*=/i', $content)) {
@@ -135,68 +138,24 @@ class MySqlConfigurator
      * @param string $replicaJail The replica jail name running MySQL
      * @param string $remoteHostOnly remote host address
      */
-    private function injectReplicationSQL0(string $remote, string $sourceJail, string $replicaJail, string $remoteHostOnly): void
-    {
-        $output = $this->shell->shell(
-            "ssh -i {$this->sshKey} {$remote} \"sudo iocage exec {$sourceJail} /usr/local/bin/mysql -e 'SHOW MASTER STATUS\\G'\"",
-            "Fetch MySQL binary log file and position from primary..."
-        );
-
-        if (!$output) {
-            throw new \RuntimeException("Failed to retrieve master status from source MySQL server.");
-        }
-
-        if (!preg_match('/File:\s+(\S+)/', $output, $f) || !preg_match('/Position:\s+(\d+)/', $output, $p)) {
-            throw new \RuntimeException("Could not parse log file and position from master status output.");
-        }
-
-        $logFile = $f[1];
-        $logPos = $p[1];
-
-        echo "🔢 Binlog: {$logFile}, Position: {$logPos}\n";
-
-        $sql = <<<EOD
-        STOP REPLICA;
-        RESET REPLICA ALL;
-        CHANGE MASTER TO
-        MASTER_HOST='$remoteHostOnly',
-        MASTER_USER='repl',
-        MASTER_PASSWORD='replica_pass',
-        MASTER_LOG_FILE='$logFile',
-        MASTER_LOG_POS=$logPos,
-        MASTER_SSL=1,
-        MASTER_SSL_CA='/var/db/mysql/certs/ca.pem',
-        MASTER_SSL_CERT='/var/db/mysql/certs/client-cert.pem',
-        MASTER_SSL_KEY='/var/db/mysql/certs/client-key.pem';
-        START REPLICA;
-        SHOW REPLICA STATUS\G;
-        EOD;
-
-        file_put_contents('/tmp/replica_setup.sql', $sql);
-
-        $this->shell->run(
-            "sudo iocage exec {$replicaJail} /usr/local/bin/mysql < /tmp/replica_setup.sql",
-            "Configure replication (inject SQL)"
-        );
-
-        @unlink('/tmp/replica_setup.sql');
-    }
-
     private function injectReplicationSQL(string $replicaJail, string $snapshotName, MetaInfo $meta): void
     {
+        $masterUser = \Config::get('MASTER_DB_USER');
+        $masterPassword = \Config::get('MASTER_DB_PASSWORD');
+
         $sql = <<<EOD
         STOP REPLICA;
         RESET REPLICA ALL;
         CHANGE MASTER TO
         MASTER_HOST='{$meta->masterHost}',
-        MASTER_USER='repl',
-        MASTER_PASSWORD='replica_pass',
+        MASTER_USER='{$masterUser}',
+        MASTER_PASSWORD='{$masterPassword}',
         MASTER_LOG_FILE='{$meta->masterLogFile}',
         MASTER_LOG_POS={$meta->masterLogPos},
         MASTER_SSL=1,
-        MASTER_SSL_CA='/var/db/mysql/certs/ca.pem',
-        MASTER_SSL_CERT='/var/db/mysql/certs/client-cert.pem',
-        MASTER_SSL_KEY='/var/db/mysql/certs/client-key.pem';
+        MASTER_SSL_CA='{$this->dbSslPath}/ca.pem',
+        MASTER_SSL_CERT='{$this->dbSslPath}/client-cert.pem',
+        MASTER_SSL_KEY='{$this->dbSslPath}/client-key.pem';
         START REPLICA;
         SHOW REPLICA STATUS\G;
         EOD;

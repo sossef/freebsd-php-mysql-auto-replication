@@ -75,7 +75,7 @@ class CertManager
     public function transferCertsFromLocal(string $replicaJail): void
     {
         $replicaRoot = \Config::get('JAILS_MOUNT_PATH') . "/{$replicaJail}/root";
-        $certTarget = "{$replicaRoot}/var/db/mysql/certs";
+        $certTarget = "{$replicaRoot}" . \Config::get('DB_SSL_PATH');
         $localSourcePath = "/usr/local/share/mysql_certs/primary";
 
         $this->shell->run(
