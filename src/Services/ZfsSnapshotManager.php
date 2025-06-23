@@ -78,18 +78,12 @@ class ZfsSnapshotManager
         );
 
         // Step 4: Write meta file (log file and position)
-        // $this->shell->run(
-        //     "ssh {$this->sshKey} {$remote} \"echo '{$logFile}' > /tmp/{$snapshotName}.meta && echo '{$logPos}' >> /tmp/{$snapshotName}.meta && sudo mv /tmp/{$snapshotName}.meta {$metaFile}\"",
-        //     "Write binlog metadata to {$metaFile}"
-        // );
-
+        // Get primary host IP
         $primaryIp = trim($this->shell->shell(
             "ssh {$this->sshKey} {$remote} \"ifconfig vtnet0 | awk '/inet / {print \\$2}'\"",
             "Get primary droplet IP"
         ));
-
-        echo "\n\nprimaryIp = $primaryIp\n\n";
-
+        // Write meta file
         $this->shell->run(
             "ssh {$this->sshKey} {$remote} \"echo '{$logFile}' > /tmp/{$snapshotName}.meta && echo '{$logPos}' >> /tmp/{$snapshotName}.meta && echo '{$primaryIp}' >> /tmp/{$snapshotName}.meta && sudo mv /tmp/{$snapshotName}.meta {$metaFile}\"",
             "Write binlog metadata to {$metaFile}"

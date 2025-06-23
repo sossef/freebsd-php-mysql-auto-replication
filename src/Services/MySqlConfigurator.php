@@ -43,7 +43,7 @@ class MySqlConfigurator
      *
      * @return void
      */
-    public function configure(string $remoteHostOnly, string $replicaJail, string $snapshotName): void
+    public function configure(string $replicaJail, string $snapshotName): void
     {
         $replicaRoot = "/tank/iocage/jails/{$replicaJail}/root";
         $mycnfPath = "{$replicaRoot}/usr/local/etc/mysql/my.cnf";
@@ -98,7 +98,7 @@ class MySqlConfigurator
         );
 
         //$this->injectReplicationSQL($remote, $sourceJail, $replicaJail, $remoteHostOnly);
-        $this->injectReplicationSQL($replicaJail, $remoteHostOnly, $snapshotName);
+        $this->injectReplicationSQL($replicaJail, $snapshotName);
     }
 
     /**
@@ -182,21 +182,19 @@ class MySqlConfigurator
         @unlink('/tmp/replica_setup.sql');
     }
 
-    private function injectReplicationSQL(string $replicaJail, string $remoteHostOnly, string $snapshotName): void
+    private function injectReplicationSQL(string $replicaJail, string $snapshotName): void
     {
-        [$logFile, $logPos] = $this->getMasterStatusFromMeta($snapshotName);
-
-        echo "🔢 Binlog: {$logFile}, Position: {$logPos}\n";
+        [$masterLogFile, $masterLogPos, $masterHost] = $this->getMetaData($snapshotName);
 
         $sql = <<<EOD
         STOP REPLICA;
         RESET REPLICA ALL;
         CHANGE MASTER TO
-        MASTER_HOST='$remoteHostOnly',
+        MASTER_HOST='$masterHost',
         MASTER_USER='repl',
         MASTER_PASSWORD='replica_pass',
-        MASTER_LOG_FILE='$logFile',
-        MASTER_LOG_POS=$logPos,
+        MASTER_LOG_FILE='$masterLogFile',
+        MASTER_LOG_POS=$masterLogPos,
         MASTER_SSL=1,
         MASTER_SSL_CA='/var/db/mysql/certs/ca.pem',
         MASTER_SSL_CERT='/var/db/mysql/certs/client-cert.pem',
@@ -216,7 +214,7 @@ class MySqlConfigurator
     }
 
 
-    private function getMasterStatusFromMeta(string $snapshotName): array
+    private function getMetaData(string $snapshotName): array
     {
         $metaPath = "/tank/backups/iocage/jail/{$snapshotName}.meta";
 
@@ -230,11 +228,12 @@ class MySqlConfigurator
             throw new \RuntimeException("Meta file must contain at least 2 lines (log file and log position).");
         }
 
-        $logFile = trim($lines[0]);
-        $logPos = (int) trim($lines[1]);
+        $masterLogFile = trim($lines[0]);
+        $masterLogPos = (int) trim($lines[1]);
+        $masterHost = trim($lines[2]);
 
-        echo "🔢 Binlog: {$logFile}, Position: {$logPos}\n";
+        echo "🔢 Binlog: {$masterLogFile}, Position: {$masterLogPos}, Host: {$masterHost}\n";
 
-        return [$logFile, $logPos];
+        return [$masterLogFile, $masterLogPos, $masterHost];
     }
 }

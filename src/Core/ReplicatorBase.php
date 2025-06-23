@@ -180,8 +180,6 @@ abstract class ReplicatorBase
         // Step 1: Prepare Snapshot
         $snapshot = $this->prepareSnapshot();
 
-        exit;
-
         // Step 2: Ensure jail root exists
         $this->jails->assertRootExists($this->replicaJail);
 
@@ -195,7 +193,6 @@ abstract class ReplicatorBase
 
         // Step 5: Configure replica's my.cnf, restart MySQL and get master log info
         $this->mysql->configure(
-            $this->getRemoteHostOnly(),
             $this->replicaJail,
             $snapshot
         );
