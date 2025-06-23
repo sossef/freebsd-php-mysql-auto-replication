@@ -27,7 +27,7 @@ class ReplicatorFactory
         $force = isset($options['force']);
         $dryRun = isset($options['dry-run']);
         $skipTest = isset($options['skip-test']);
-        $sshKey = '-i ~/.ssh/id_digitalocean';
+        $sshKey = \Config::get('DEFAULT_SSH_KEY');
 
         // Use LocalReplicator if source is on localhost and an SSH username is present (e.g., localhost@jail@snapshot)
         if (str_starts_with($from, 'localhost:')) {

@@ -136,7 +136,7 @@ abstract class ReplicatorBase
         bool $force = false,
         bool $dryRun = false,
         bool $skipTest = false,
-        string $sshKey = '-i ~/.ssh/id_digitalocean',
+        string $sshKey = null,
     ) {
         [$this->from, $this->sourceJail] = explode(':', $from);
         [, $this->replicaJail] = explode(':', $to);

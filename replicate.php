@@ -4,9 +4,7 @@
 require_once __DIR__ . '/vendor/autoload.php';
 require_once __DIR__ . '/Config.php';
 
-Config::load(__DIR__); // Load .env
-
-echo "\n\n" . Config::get('SNAPSHOT_BACKUP_DIR') . "\n\n";
+Config::load(__DIR__); // Lo
 
 use Monsefrachid\MysqlReplication\Core\ReplicatorFactory;
 
@@ -34,12 +32,12 @@ if (!isset($options['from'], $options['to'])) {
     exit(1);
 }
 
-$from = $options['from'];
-$to = $options['to'];
-$force = isset($options['force']);
-$dryRun = isset($options['dry-run']);
-$skipTest = isset($options['skip-test']);
-$sshKey = '-i ~/.ssh/id_digitalocean';
+// $from = $options['from'];
+// $to = $options['to'];
+// $force = isset($options['force']);
+// $dryRun = isset($options['dry-run']);
+// $skipTest = isset($options['skip-test']);
+// $sshKey = '-i ~/.ssh/id_digitalocean';
 
 // Use factory to create the correct replicator subclass
 $replicator = ReplicatorFactory::create($options);
