@@ -204,7 +204,7 @@ abstract class ReplicatorBase
 
         // Step 6: Replication testing
         $this->verifier->verify(
-            $this->masterHost,
+            $this->meta->masterHost,
             $this->sourceJail,
             $this->replicaJail,
             $this->skipTest
