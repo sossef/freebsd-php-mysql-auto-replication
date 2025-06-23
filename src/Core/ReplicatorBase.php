@@ -195,7 +195,7 @@ abstract class ReplicatorBase
         $this->transferCertificates();
 
         // Step 5: Load meta data and configure replica's my.cnf, restart MySQL
-        $this->loadMetaData();
+        $this->loadMetaData($snapshot);
         $this->mysql->configure(
             $this->replicaJail,
             $snapshot,
