@@ -44,7 +44,7 @@ class CertManager
     public function transferCerts(string $remote, string $sourceJail, string $replicaJail): void
     {
         $replicaRoot = \Config::get('JAILS_MOUNT_PATH') . "/{$replicaJail}/root";
-        $certTarget = "{$replicaRoot}/var/db/mysql/certs";
+        $certTarget = "{$replicaRoot}" . \Config::get('DB_SSL_PATH');
 
         $this->shell->run(
             "scp -i {$this->sshKey} {$remote}:/tmp/ssl_certs_primary/*.pem /tmp/",
