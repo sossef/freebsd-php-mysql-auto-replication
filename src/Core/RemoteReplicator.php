@@ -22,7 +22,7 @@ class RemoteReplicator extends ReplicatorBase
     protected function prepareSnapshot(): string
     {
         // Generate a unique timestamped snapshot suffix
-        $snapshotSuffix = 'replica_' . date('YmdHis');
+        $snapshotSuffix = '_' . date('YmdHis');
 
         // Create the remote snapshot and store .zfs and .meta files under /tank/backups/iocage/jail/
         $snapshot = $this->zfs->createRemoteSnapshot(

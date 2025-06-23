@@ -43,7 +43,7 @@ class MySqlConfigurator
      *
      * @return void
      */
-    public function configure(string $replicaJail, string $snapshotName, array $masterData): void
+    public function configure(string $replicaJail, string $snapshotName, MetaInfo $meta): void
     {
         $replicaRoot = "/tank/iocage/jails/{$replicaJail}/root";
         $mycnfPath = "{$replicaRoot}/usr/local/etc/mysql/my.cnf";
