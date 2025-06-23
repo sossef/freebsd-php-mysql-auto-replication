@@ -138,7 +138,7 @@ class MySqlConfigurator
     private function injectReplicationSQL0(string $remote, string $sourceJail, string $replicaJail, string $remoteHostOnly): void
     {
         $output = $this->shell->shell(
-            "ssh {$this->sshKey} {$remote} \"sudo iocage exec {$sourceJail} /usr/local/bin/mysql -e 'SHOW MASTER STATUS\\G'\"",
+            "ssh -i {$this->sshKey} {$remote} \"sudo iocage exec {$sourceJail} /usr/local/bin/mysql -e 'SHOW MASTER STATUS\\G'\"",
             "Fetch MySQL binary log file and position from primary..."
         );
 

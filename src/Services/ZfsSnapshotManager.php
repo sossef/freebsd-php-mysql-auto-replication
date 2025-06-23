@@ -63,7 +63,7 @@ class ZfsSnapshotManager
         $metaFile = "{$remoteBackupDir}/{$snapshotName}.meta";
 
         // Step 1: Capture master status
-        $cmdMasterStatus = "ssh {$this->sshKey} {$remote} \"sudo iocage exec {$jailName} /usr/local/bin/mysql -N -e 'SHOW MASTER STATUS'\"";
+        $cmdMasterStatus = "ssh -i {$this->sshKey} {$remote} \"sudo iocage exec {$jailName} /usr/local/bin/mysql -N -e 'SHOW MASTER STATUS'\"";
         $output = $this->shell->shell($cmdMasterStatus, "Fetch MySQL master status on {$jailName}");
         $lines = explode("\n", trim($output));
 
@@ -75,25 +75,25 @@ class ZfsSnapshotManager
 
         // Step 2: Create snapshot
         $this->shell->run(
-            "ssh {$this->sshKey} {$remote} sudo zfs snapshot -r {$snapshotFull}",
+            "ssh -i {$this->sshKey} {$remote} sudo zfs snapshot -r {$snapshotFull}",
             "Create snapshot {$snapshotFull} on remote"
         );
 
         // Step 3: Send snapshot to file
         $this->shell->run(
-            "ssh {$this->sshKey} {$remote} \"sudo zfs send -R {$snapshotFull} | sudo tee {$zfsFile} > /dev/null\"",
+            "ssh -i {$this->sshKey} {$remote} \"sudo zfs send -R {$snapshotFull} | sudo tee {$zfsFile} > /dev/null\"",
             "Send snapshot to file {$zfsFile}"
         );
 
         // Step 4: Write meta file (log file and position)
         // Get primary host IP
         $primaryIp = trim($this->shell->shell(
-            "ssh {$this->sshKey} {$remote} \"ifconfig vtnet0 | awk '/inet / {print \\$2}'\"",
+            "ssh -i {$this->sshKey} {$remote} \"ifconfig vtnet0 | awk '/inet / {print \\$2}'\"",
             "Get primary droplet IP"
         ));
         // Write meta file
         $this->shell->run(
-            "ssh {$this->sshKey} {$remote} \"echo '{$logFile}' > /tmp/{$snapshotName}.meta && echo '{$logPos}' >> /tmp/{$snapshotName}.meta && echo '{$primaryIp}' >> /tmp/{$snapshotName}.meta && echo '{$jailName}' >> /tmp/{$snapshotName}.meta && sudo mv /tmp/{$snapshotName}.meta {$metaFile}\"",
+            "ssh -i {$this->sshKey} {$remote} \"echo '{$logFile}' > /tmp/{$snapshotName}.meta && echo '{$logPos}' >> /tmp/{$snapshotName}.meta && echo '{$primaryIp}' >> /tmp/{$snapshotName}.meta && echo '{$jailName}' >> /tmp/{$snapshotName}.meta && sudo mv /tmp/{$snapshotName}.meta {$metaFile}\"",
             "Write binlog metadata to {$metaFile}"
         );
 
@@ -160,7 +160,7 @@ class ZfsSnapshotManager
         $base = "{$this->snapshotBackupLocation}/{$snapshotName}";
         $cmd = "[ -f {$base}.zfs ] && [ -f {$base}.meta ]";
         $this->shell->run(
-            "ssh {$this->sshKey} {$remote} '{$cmd}'",
+            "ssh -i {$this->sshKey} {$remote} '{$cmd}'",
             "Verify snapshot and metadata files exist on remote"
         );
     }
@@ -199,7 +199,7 @@ class ZfsSnapshotManager
     {
         $snapshot = "{$jailName}@{$snapshotSuffix}";
         $this->shell->run(
-            "ssh {$this->sshKey} {$remote} sudo zfs snapshot -r tank/iocage/jails/{$snapshot}",
+            "ssh -i {$this->sshKey} {$remote} sudo zfs snapshot -r tank/iocage/jails/{$snapshot}",
             "Create remote ZFS snapshot: {$snapshot}"
         );
         return $snapshot;
@@ -216,7 +216,7 @@ class ZfsSnapshotManager
     public function verifyRemoteSnapshotLive(string $remote, string $snapshotSuffix): void
     {
         $this->shell->run(
-            "ssh {$this->sshKey} {$remote} zfs list -t snapshot | grep {$snapshotSuffix}",
+            "ssh -i {$this->sshKey} {$remote} zfs list -t snapshot | grep {$snapshotSuffix}",
             "Verify remote snapshot exists"
         );
     }
@@ -234,7 +234,7 @@ class ZfsSnapshotManager
     public function streamSnapshotToLocal(string $remote, string $snapshot, string $targetJailName): void
     {
         $this->shell->run(
-            "ssh {$this->sshKey} {$remote} sudo zfs send -R tank/iocage/jails/{$snapshot} | sudo zfs recv -F tank/iocage/jails/{$targetJailName}",
+            "ssh -i {$this->sshKey} {$remote} sudo zfs send -R tank/iocage/jails/{$snapshot} | sudo zfs recv -F tank/iocage/jails/{$targetJailName}",
             "Send and receive ZFS snapshot for jail '{$targetJailName}'",
             "Failed to ZFS receive replica"
         );
