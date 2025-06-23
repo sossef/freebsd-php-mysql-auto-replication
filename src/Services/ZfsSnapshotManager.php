@@ -83,17 +83,17 @@ class ZfsSnapshotManager
         //     "Write binlog metadata to {$metaFile}"
         // );
 
+        $primaryIp = trim($this->shell->shell(
+            "ssh {$this->sshKey} {$remote} \"ifconfig vtnet0 | awk '/inet / {print \\$2}'\"",
+            "Get primary droplet IP"
+        ));
+
+        echo "\n\nprimaryIp = $primaryIp\n\n";
+
         $this->shell->run(
-            "ssh {$this->sshKey} {$remote} \""
-            . "LOG_FILE='{$logFile}'; "
-            . "LOG_POS='{$logPos}'; "
-            . "IP=\\\$(ifconfig vtnet0 | awk '/inet / {print \$2}'); "
-            . "echo \\\"\$LOG_FILE\\n\$LOG_POS\\n\$IP\\\" > /tmp/{$snapshotName}.meta && "
-            . "sudo mv /tmp/{$snapshotName}.meta {$metaFile}\"",
-            "Write binlog metadata and primary server IP to {$metaFile}"
+            "ssh {$this->sshKey} {$remote} \"echo '{$logFile}' > /tmp/{$snapshotName}.meta && echo '{$logPos}' >> /tmp/{$snapshotName}.meta && echo '{$primaryIp}' >> /tmp/{$snapshotName}.meta && sudo mv /tmp/{$snapshotName}.meta {$metaFile}\"",
+            "Write binlog metadata to {$metaFile}"
         );
-
-
 
         return $snapshotName; // base name without .zfs or .meta extension
     }
