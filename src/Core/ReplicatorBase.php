@@ -216,9 +216,9 @@ abstract class ReplicatorBase
 
     protected function loadMetaData(string $snapshotName): void
     {
-        $snapshotBackupLocation = \Config::get('SNAPSHOT_BACKUP_DIR');
+        $snapshotBackupPath = \Config::get('SNAPSHOT_BACKUP_DIR');
 
-        $metaPath = "{$snapshotBackupLocation}/{$snapshotName}.meta";
+        $metaPath = "{$snapshotBackupPath}/{$snapshotName}.meta";
 
         if (!file_exists($metaPath)) {
             throw new \RuntimeException("Meta file not found at: {$metaPath}");

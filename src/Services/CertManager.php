@@ -43,7 +43,7 @@ class CertManager
      */
     public function transferCerts(string $remote, string $sourceJail, string $replicaJail): void
     {
-        $replicaRoot = \Config::get('DEFAULT_JAILS_BASE') . "/{$replicaJail}/root";
+        $replicaRoot = \Config::get('JAILS_MOUNT_PATH') . "/{$replicaJail}/root";
         $certTarget = "{$replicaRoot}/var/db/mysql/certs";
 
         $this->shell->run(
@@ -74,7 +74,7 @@ class CertManager
 
     public function transferCertsFromLocal(string $replicaJail): void
     {
-        $replicaRoot = \Config::get('DEFAULT_JAILS_BASE') . "/{$replicaJail}/root";
+        $replicaRoot = \Config::get('JAILS_MOUNT_PATH') . "/{$replicaJail}/root";
         $certTarget = "{$replicaRoot}/var/db/mysql/certs";
         $localSourcePath = "/usr/local/share/mysql_certs/primary";
 
