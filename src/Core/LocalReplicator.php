@@ -31,4 +31,9 @@ class LocalReplicator extends ReplicatorBase
 
         return $snapshot;
     }
+
+    protected function transferCertificates(): void
+    {
+        $this->certs->transferCertsFromLocal($this->replicaJail);
+    }
 }

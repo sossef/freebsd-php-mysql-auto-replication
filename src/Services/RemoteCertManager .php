@@ -3,13 +3,14 @@
 namespace Monsefrachid\MysqlReplication\Services;
 
 use Monsefrachid\MysqlReplication\Support\ShellRunner;
+use Monsefrachid\MysqlReplication\Contracts\CertTransferInterface;
 
 /**
  * Class CertManager
  *
  * Handles SSL certificate transfer and setup from remote jail to local replica.
  */
-class CertManager
+class RemoteCertManager implements CertTransferInterface
 {
     /**
      * @var ShellRunner
@@ -70,16 +71,5 @@ class CertManager
             "sudo chmod 600 {$certTarget}/*.pem",
             "Restrict cert file permissions"
         );
-    }
-
-    public function transferCertsFromLocal(string $replicaJail): void
-    {
-        $certSource = "/usr/local/share/mysql_certs/primary/*.pem";
-        $certTarget = "/tank/iocage/jails/{$replicaJail}/root/var/db/mysql/certs";
-
-        $this->shell->run("sudo mkdir -p {$certTarget}", "Create cert target directory in replica jail");
-        $this->shell->run("sudo cp {$certSource} {$certTarget}/", "Copy certs to replica jail");
-        $this->shell->run("sudo chown 88:88 {$certTarget}/*.pem", "Set MySQL user:group ownership on certs");
-        $this->shell->run("sudo chmod 600 {$certTarget}/*.pem", "Restrict cert file permissions");
     }
 }

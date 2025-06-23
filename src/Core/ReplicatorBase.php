@@ -133,7 +133,7 @@ abstract class ReplicatorBase
         bool $force = false,
         bool $dryRun = false,
         bool $skipTest = false,
-        string $sshKey = '-i ~/.ssh/id_digitalocean'
+        string $sshKey = '-i ~/.ssh/id_digitalocean',
     ) {
         [$this->from, $this->sourceJail] = explode(':', $from);
         [, $this->replicaJail] = explode(':', $to);
@@ -153,6 +153,8 @@ abstract class ReplicatorBase
     }
 
     abstract protected function prepareSnapshot(): string;
+
+    abstract protected function transferCertificates(): void;
 
     /**
      * Entry point to execute the replication process.
@@ -186,7 +188,8 @@ abstract class ReplicatorBase
         $this->jails->start($this->replicaJail);
 
         // Step 4: Transfer SSL certs from primary jail to replica
-        $this->certs->transferCerts($this->from, $this->sourceJail, $this->replicaJail);
+        //$this->certs->transferCerts($this->from, $this->sourceJail, $this->replicaJail);
+        $this->transferCertificates();
 
         // Step 5: Configure replica's my.cnf, restart MySQL and get master log info
         $this->mysql->configure(
