@@ -180,6 +180,8 @@ abstract class ReplicatorBase
         // Step 1: Prepare Snapshot
         $snapshot = $this->prepareSnapshot();
 
+        exit;
+
         // Step 2: Ensure jail root exists
         $this->jails->assertRootExists($this->replicaJail);
 

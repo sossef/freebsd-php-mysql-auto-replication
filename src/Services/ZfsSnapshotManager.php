@@ -78,9 +78,19 @@ class ZfsSnapshotManager
         );
 
         // Step 4: Write meta file (log file and position)
+        // $this->shell->run(
+        //     "ssh {$this->sshKey} {$remote} \"echo '{$logFile}' > /tmp/{$snapshotName}.meta && echo '{$logPos}' >> /tmp/{$snapshotName}.meta && sudo mv /tmp/{$snapshotName}.meta {$metaFile}\"",
+        //     "Write binlog metadata to {$metaFile}"
+        // );
+
         $this->shell->run(
-            "ssh {$this->sshKey} {$remote} \"echo '{$logFile}' > /tmp/{$snapshotName}.meta && echo '{$logPos}' >> /tmp/{$snapshotName}.meta && sudo mv /tmp/{$snapshotName}.meta {$metaFile}\"",
-            "Write binlog metadata to {$metaFile}"
+            "ssh {$this->sshKey} {$remote} \""
+                . "LOG_FILE='{$logFile}'; "
+                . "LOG_POS='{$logPos}'; "
+                . "IP=\\$(ifconfig vtnet0 | awk '/inet / {print \$2}'); "
+                . "echo \\\"\\$LOG_FILE\\n\\$LOG_POS\\n\\$IP\\\" > /tmp/{$snapshotName}.meta && "
+                . "sudo mv /tmp/{$snapshotName}.meta {$metaFile}\"",
+            "Write binlog metadata and primary server IP to {$metaFile}"
         );
 
         return $snapshotName; // base name without .zfs or .meta extension
