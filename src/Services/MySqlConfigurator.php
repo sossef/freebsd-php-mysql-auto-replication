@@ -184,6 +184,8 @@ class MySqlConfigurator
 
     private function injectReplicationSQL(string $replicaJail, string $snapshotName, MetaInfo $meta): void
     {
+        echo "\n\ninjectReplicationSQL : " . Config::get('SNAPSHOT_BACKUP_DIR') . "\n\n";
+
         $sql = <<<EOD
         STOP REPLICA;
         RESET REPLICA ALL;

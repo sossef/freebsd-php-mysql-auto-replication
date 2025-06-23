@@ -2,6 +2,11 @@
 <?php
 
 require_once __DIR__ . '/vendor/autoload.php';
+require_once __DIR__ . '/Config.php';
+
+Config::load(__DIR__); // Load .env
+
+echo "\n\n" . Config::get('SNAPSHOT_BACKUP_DIR') . "\n\n";
 
 use Monsefrachid\MysqlReplication\Core\ReplicatorFactory;
 
