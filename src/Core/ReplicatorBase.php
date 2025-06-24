@@ -157,55 +157,176 @@ abstract class ReplicatorBase
         bool $skipTest = false,
         string $sshKey = '',
     ) {
+        // Parse the replication source and target strings.
+        // Format is "user@host:jailName" for remote, or just ":jailName" for local.
         [$this->from, $this->sourceJail] = explode(':', $from);
         [, $this->replicaJail] = explode(':', $to);
 
-        $this->force = $force;
-        $this->dryRun = $dryRun;
-        $this->skipTest = $skipTest;
-        $this->sshKey = $sshKey;
+        // Store replication options
+        $this->force = $force;         // Whether to force overwrite existing replica
+        $this->dryRun = $dryRun;       // If true, commands will be logged but not executed
+        $this->skipTest = $skipTest;   // If true, final replication verification will be skipped
+        $this->sshKey = $sshKey;       // Path to SSH key for remote connections
 
-        $this->shell = new ShellRunner(
-            $this->dryRun
-        );
+        // Initialize shell runner, used for all system command execution
+        $this->shell = new ShellRunner($this->dryRun);
 
-        $this->jailDriver = new IocageJailDriver(
-            $this->shell
-        );
+        // Initialize jail driver (local or remote), responsible for jail-related operations
+        $this->jailDriver = new IocageJailDriver($this->shell);
 
+        // Initialize snapshot manager, handles ZFS send/receive and snapshot naming
         $this->zfs = new ZfsSnapshotManager(
             $this->shell, 
             $this->jailDriver,
-            $this->sshKey            
+            $this->sshKey
         );
 
-        $this->jails = new JailManager(
-            $this->jailDriver
-        );
+        // Initialize jail manager, high-level controller for jail lifecycle (start/stop/etc.)
+        $this->jails = new JailManager($this->jailDriver);
 
+        // Initialize jail configurator, responsible for boot, fstab, and file system setup
         $this->configurator = new JailConfigurator(
             $this->shell, 
             $this->jailDriver
         );
 
+        // Initialize certificate manager, responsible for transferring and placing SSL files
         $this->certs = new CertManager(
             $this->shell, 
             $this->jailDriver,
-            $this->sshKey            
+            $this->sshKey
         );
 
+        // Initialize MySQL configurator, handles replication setup inside the replica jail
         $this->mysql = new MySqlConfigurator(
             $this->shell, 
             $this->jailDriver,
-            $this->sshKey            
+            $this->sshKey
         );
 
+        // Initialize verifier, performs final validation to ensure replication is successful
         $this->verifier = new ReplicationVerifier(
             $this->shell, 
             $this->jailDriver, 
             $this->sshKey, 
             $this->dryRun
         );
+    }    
+
+    /**
+     * Orchestrates the full replication workflow from source to replica jail.
+     *
+     * Steps:
+     *   0. Check if the replica jail exists and optionally destroy it if --force is set.
+     *   1. Prepare a snapshot from the source jail.
+     *   2. Ensure the root path for the replica jail exists.
+     *   3. Configure and start the replica jail.
+     *   4. Transfer SSL certificates from source to replica jail.
+     *   5. Load snapshot metadata and configure MySQL replication.
+     *   6. Verify replication with a test query.
+     *
+     * @return void
+     */
+    public function run(): void
+    {
+        // Display replication source/target and runtime flags
+        echo "\n🛠️ Running replication from '{$this->from}:{$this->sourceJail}' to '{$this->replicaJail}'\n\n";
+        echo 'Flags: force=' . ($this->force ? 'true' : 'false') .
+            ', dryRun=' . ($this->dryRun ? 'true' : 'false') .
+            ', skipTest=' . ($this->skipTest ? 'true' : 'false') . "\n";
+
+        // Step 0: Handle existing replica jail
+        if ($this->jails->exists($this->replicaJail)) {
+            if ($this->force) {
+                echo "⚠️ [FORCE] Jail '{$this->replicaJail}' already exists. Destroying...\n";
+                $this->jails->destroy($this->replicaJail);
+            } else {
+                echo "❌ Jail '{$this->replicaJail}' already exists. Use --force to overwrite.\n";
+                exit(1);
+            }
+        }
+
+        // Step 1: Create or retrieve snapshot from source jail
+        $snapshot = $this->prepareSnapshot();
+
+        // Step 2: Ensure the replica jail's root directory is in place
+        $this->jails->assertRootExists($this->replicaJail);
+
+        // Step 3: Configure system files and start the replica jail
+        $this->configurator->configure($this->replicaJail);
+        $this->jails->start($this->replicaJail);
+
+        // Step 4: Transfer required SSL certificates to replica jail
+        $this->transferCertificates();
+
+        // Step 5: Load binlog metadata and configure MySQL replica settings
+        $this->loadMetaData($snapshot);
+        $this->mysql->configure(
+            $this->replicaJail,
+            $snapshot,
+            $this->meta
+        );
+
+        // Step 6: Test replication health and correctness
+        $this->verifier->verify(
+            $this->meta->masterHost,
+            $this->meta->masterJailName,
+            $this->sourceJail,
+            $this->replicaJail,
+            $this->skipTest
+        );
+
+        // Final confirmation
+        echo "\n✅ Replica setup complete and replication initialized.\n\n";
+    }
+
+    /**
+     * Load replication metadata from a snapshot's .meta file and populate $this->meta.
+     *
+     * The metadata file is expected to contain at least 4 lines:
+     *   1. Binlog file name (e.g., mysql-bin.000003)
+     *   2. Binlog position (e.g., 2048)
+     *   3. Master host (e.g., 159.89.226.27)
+     *   4. Master jail name (e.g., mysql_jail_primary)
+     *
+     * @param string $snapshotName The name of the snapshot (used to locate the .meta file).
+     *
+     * @throws \RuntimeException If the metadata file is missing or incomplete.
+     *
+     * @return void
+     */
+    protected function loadMetaData(string $snapshotName): void
+    {
+        // Get the directory path where .meta files are stored (via jail driver abstraction)
+        $snapshotBackupPath = $this->jailDriver->getSnapshotBackupDir();
+
+        // Compose the full path to the .meta file for the given snapshot
+        $metaPath = "{$snapshotBackupPath}/{$snapshotName}.meta";
+
+        // Validate the metadata file exists
+        if (!file_exists($metaPath)) {
+            throw new \RuntimeException("Meta file not found at: {$metaPath}");
+        }
+
+        // Read file into array of lines, skipping empty lines
+        $lines = file($metaPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+
+        // Validate the file contains at least the required lines
+        if (count($lines) < 3) {
+            throw new \RuntimeException("Meta file must contain at least 3 lines (log file, log position, and primary IP).");
+        }
+
+        // Extract values from lines
+        $masterLogFile = trim($lines[0]);            // Binlog file name
+        $masterLogPos = (int) trim($lines[1]);       // Binlog position
+        $masterHost = trim($lines[2]);               // Master host IP
+        $masterJailName = trim($lines[3]);           // Name of the source jail
+
+        // Populate metadata object with parsed info
+        $this->meta = new MetaInfo($masterLogFile, $masterLogPos, $masterHost, $masterJailName);
+
+        // Output debug info to console for visibility
+        echo "🔢 Binlog: {$this->meta->masterLogFile}, Position: {$this->meta->masterLogPos}, Host: {$this->meta->masterHost}, Jail: {$this->meta->masterJailName}\n";
     }
 
     /**
@@ -228,98 +349,4 @@ abstract class ReplicatorBase
      * @return void
      */
     abstract protected function transferCertificates(): void;
-
-    /**
-     * Entry point to execute the replication process.
-     */
-    public function run(): void
-    {
-        echo "\n🛠️ Running replication from '{$this->from}:{$this->sourceJail}' to '{$this->replicaJail}'\n\n";
-        echo 'Flags: force=' . ($this->force ? 'true' : 'false') .
-            ', dryRun=' . ($this->dryRun ? 'true' : 'false') .
-            ', skipTest=' . ($this->skipTest ? 'true' : 'false') . "\n";
-
-        // Step 0: Check for existing jail and destroy if --force is set
-        if ($this->jails->exists($this->replicaJail)) {
-            if ($this->force) {
-                echo "⚠️ [FORCE] Jail '{$this->replicaJail}' already exists. Destroying...\n";
-                $this->jails->destroy($this->replicaJail);
-            } else {
-                echo "❌ Jail '{$this->replicaJail}' already exists. Use --force to overwrite.\n";
-                exit(1);
-            }
-        }
-
-        // Step 1: Prepare Snapshot
-        $snapshot = $this->prepareSnapshot();
-
-        // Step 2: Ensure jail root exists
-        $this->jails->assertRootExists($this->replicaJail);
-
-        // Step 3: Configure replica jail and start
-        $this->configurator->configure($this->replicaJail);
-        $this->jails->start($this->replicaJail);
-
-        // Step 4: Transfer SSL certs from primary jail to replica
-        //$this->certs->transferCerts($this->from, $this->sourceJail, $this->replicaJail);
-        $this->transferCertificates();
-
-        // Step 5: Load meta data and configure replica's my.cnf, restart MySQL
-        $this->loadMetaData($snapshot);
-        $this->mysql->configure(
-            $this->replicaJail,
-            $snapshot,
-            $this->meta
-        );
-
-        // Step 6: Replication testing
-        $this->verifier->verify(
-            $this->meta->masterHost,
-            $this->meta->masterJailName,
-            $this->sourceJail,
-            $this->replicaJail,
-            $this->skipTest
-        );
-
-        echo "\n✅ Replica setup complete and replication initialized.\n\n";
-    }
-
-    /**
-     * Load MySQL replication metadata from a snapshot-specific `.meta` file.
-     *
-     * This metadata includes the binlog file name, position, master host, and source jail name,
-     * and is required to properly configure the replica during setup.
-     *
-     * @param string $snapshotName The name of the snapshot whose metadata file should be loaded.
-     *
-     * @return void
-     *
-     * @throws \RuntimeException If the metadata file is missing or has insufficient data.
-     */
-    protected function loadMetaData(string $snapshotName): void
-    {
-        //$snapshotBackupPath = \Config::get('IOCAGE_SNAPSHOT_BACKUP_DIR');
-        $snapshotBackupPath = $this->jailDriver->getSnapshotBackupDir();
-
-        $metaPath = "{$snapshotBackupPath}/{$snapshotName}.meta";
-
-        if (!file_exists($metaPath)) {
-            throw new \RuntimeException("Meta file not found at: {$metaPath}");
-        }
-
-        $lines = file($metaPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-
-        if (count($lines) < 3) {
-            throw new \RuntimeException("Meta file must contain at least 3 lines (log file, log position, and primary IP).");
-        }
-
-        $masterLogFile = trim($lines[0]);
-        $masterLogPos = (int) trim($lines[1]);
-        $masterHost = trim($lines[2]);
-        $masterJailName = trim($lines[3]);
-
-        $this->meta = new MetaInfo($masterLogFile, $masterLogPos, $masterHost, $masterJailName);
-
-        echo "🔢 Binlog: {$this->meta->masterLogFile}, Position: {$this->meta->masterLogPos}, Host: {$this->meta->masterHost}, Jail: {$this->meta->masterJailName}\n";
-    }
 }
