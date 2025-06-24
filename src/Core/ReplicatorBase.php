@@ -153,7 +153,7 @@ abstract class ReplicatorBase
         $this->configurator = new JailConfigurator($this->shell, $jailDriver);
         $this->certs = new CertManager($this->shell, $this->sshKey);
         $this->mysql = new MySqlConfigurator($this->shell, $this->sshKey, $jailDriver);
-        $this->verifier = new ReplicationVerifier($this->shell, $this->sshKey, $this->dryRun, $jailDriver);
+        $this->verifier = new ReplicationVerifier($this->shell, $jailDriver, $this->sshKey, $this->dryRun);
     }
 
     abstract protected function prepareSnapshot(): string;

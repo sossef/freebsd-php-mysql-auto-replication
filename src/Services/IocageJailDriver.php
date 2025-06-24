@@ -122,8 +122,8 @@ class IocageJailDriver implements JailDriverInterface
         $bin = \Config::get('MYSQL_BIN_PATH');
 
         $cmd = <<<EOD
-        ssh -i {$sshKey} {$remoteHost} "sudo iocage exec {$jailName} {$bin} -N -e '{$query}'"
-        EOD;
+ssh -i {$sshKey} {$remoteHost} "sudo iocage exec {$jailName} {$bin} -N -e '{$query}'"
+EOD;
 
         return $this->shell->shell($cmd, $description);
     }
@@ -133,8 +133,8 @@ class IocageJailDriver implements JailDriverInterface
         $bin = \Config::get('MYSQL_BIN_PATH');
 
         $cmd = <<<EOD
-        echo "{$sqlContent}" | ssh -i {$sshKey} {$remoteHost} "sudo iocage exec {$jailName} sh -c '{$bin}'"
-        EOD;
+echo "{$sqlContent}" | ssh -i {$sshKey} {$remoteHost} "sudo iocage exec {$jailName} sh -c '{$bin}'"
+EOD;
 
         return $this->shell->run($cmd, $description);
     }
