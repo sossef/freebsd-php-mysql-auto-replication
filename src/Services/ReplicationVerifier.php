@@ -21,7 +21,7 @@ use RuntimeException;
 class ReplicationVerifier
 {
     use LoggerTrait;
-    
+
     private ShellRunner $shell;
     private string $sshKey;
     private bool $dryRun;
@@ -184,9 +184,6 @@ class ReplicationVerifier
                 $result[$key] = $value;
             }
         }
-
-        echo "Result\n\n";
-        print_r($result);
 
         return $result;
     }
