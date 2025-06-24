@@ -236,22 +236,22 @@ abstract class ReplicatorBase
         Logger::load(__DIR__ . '/../../logs'); // default name: replication
 
         // Display replication source/target and runtime flags
-        $msg = "\n🛠️ Running replication from '{$this->from}:{$this->sourceJail}' to '{$this->replicaJail}'\n\n";
-        $msg .= 'Flags: force=' . ($this->force ? 'true' : 'false') .
+        $this->log("\n🛠️ Running replication from '{$this->from}:{$this->sourceJail}' to '{$this->replicaJail}'\n\n");
+        $this->log('Flags: force=' . ($this->force ? 'true' : 'false') .
             ', dryRun=' . ($this->dryRun ? 'true' : 'false') .
-            ', skipTest=' . ($this->skipTest ? 'true' : 'false') . "\n";
-        
-        $this->log($msg);
+            ', skipTest=' . ($this->skipTest ? 'true' : 'false') . "\n");
 
         // Check if the target replica jail already exists
         if ($this->jails->exists($this->replicaJail)) {
             if ($this->force) {
                 // If --force flag is set, destroy the existing jail to proceed
-                echo "⚠️ [FORCE] Jail '{$this->replicaJail}' already exists. Destroying...\n";
+                $this->logWarning("[FORCE] Jail '{$this->replicaJail}' already exists. Destroying...\n");
+
                 $this->jails->destroy($this->replicaJail);
             } else {
                 // Otherwise, halt execution to avoid accidental overwrite
-                echo "❌ Jail '{$this->replicaJail}' already exists. Use --force to overwrite.\n";
+                $this->logError("Jail '{$this->replicaJail}' already exists. Use --force to overwrite.\n");
+                
                 exit(1);
             }
         }
