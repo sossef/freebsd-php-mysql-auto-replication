@@ -141,15 +141,17 @@ abstract class ReplicatorBase
         [$this->from, $this->sourceJail] = explode(':', $from);
         [, $this->replicaJail] = explode(':', $to);
 
+        $jailDriver = new IocageJailDriver($this->shell);
+
         $this->force = $force;
         $this->dryRun = $dryRun;
         $this->skipTest = $skipTest;
         $this->sshKey = $sshKey;
 
         $this->shell = new ShellRunner($this->dryRun);
-        $this->zfs = new ZfsSnapshotManager($this->shell, $this->sshKey, new IocageJailDriver($this->shell));
-        $this->jails = new JailManager(new IocageJailDriver($this->shell));
-        $this->configurator = new JailConfigurator($this->shell);
+        $this->zfs = new ZfsSnapshotManager($this->shell, $this->sshKey, $jailDriver);
+        $this->jails = new JailManager($jailDriver);
+        $this->configurator = new JailConfigurator($this->shell, $jailDriver);
         $this->certs = new CertManager($this->shell, $this->sshKey);
         $this->mysql = new MySqlConfigurator($this->shell, $this->sshKey);
         $this->verifier = new ReplicationVerifier($this->shell, $this->sshKey, $this->dryRun);
