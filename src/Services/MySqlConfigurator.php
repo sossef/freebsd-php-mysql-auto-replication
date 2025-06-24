@@ -91,24 +91,9 @@ class MySqlConfigurator
         }
 
         // Restart MySQL and regenerate UUID
-        // $this->shell->run(
-        //     "sudo iocage exec {$replicaJail} service mysql-server stop",
-        //     "Stop MySQL in replica jail"
-        // );
-
         $this->jailDriver->runService($replicaJail, 'mysql-server', 'stop', 'Stop MySQL in replica jail');
 
-        // $this->shell->run(
-        //     "sudo iocage exec {$replicaJail} rm -f /var/db/mysql/auto.cnf",
-        //     "Delete auto.cnf to regenerate server UUID"
-        // );
-
         $this->jailDriver->exec($replicaJail, 'rm -f /var/db/mysql/auto.cnf', 'Delete auto.cnf to regenerate server UUID');
-
-        // $this->shell->run(
-        //     "sudo iocage exec {$replicaJail} service mysql-server start",
-        //     "Start MySQL in replica jail"
-        // );
 
         $this->jailDriver->runService($replicaJail, 'mysql-server', 'start', 'Start MySQL in replica jail');
 
@@ -178,15 +163,6 @@ class MySqlConfigurator
         $command = "{$mysqlBinPath} < {$tempSqlFile}";
 
         $this->jailDriver->exec($replicaJail, $command, "Configure replication (inject SQL)");
-
-        // file_put_contents('/tmp/replica_setup.sql', $sql);
-
-        // $mysqlBinPath = \Config::get('MYSQL_BIN_PATH');
-
-        // $this->shell->run(
-        //     "sudo iocage exec {$replicaJail} {$mysqlBinPath} < /tmp/replica_setup.sql",
-        //     "Configure replication (inject SQL)"
-        // );
 
         @unlink('/tmp/replica_setup.sql');
     }
