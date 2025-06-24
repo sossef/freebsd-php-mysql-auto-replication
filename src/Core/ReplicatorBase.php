@@ -4,6 +4,7 @@ namespace Monsefrachid\MysqlReplication\Core;
 
 use Monsefrachid\MysqlReplication\Support\ShellRunner;
 use Monsefrachid\MysqlReplication\Support\MetaInfo;
+use Monsefrachid\MysqlReplication\Support\Logger;
 use Monsefrachid\MysqlReplication\Support\LoggerTrait;
 use Monsefrachid\MysqlReplication\Services\ZfsSnapshotManager;
 use Monsefrachid\MysqlReplication\Services\JailManager;
