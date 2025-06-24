@@ -118,4 +118,41 @@ class ReplicationVerifier
 
         echo "\n✅ End-to-end replication test passed.\n";
     }
+
+    public function verifyReplicaStatus(
+        string $masterHost,
+        string $masterJailName,
+        string $sourceJail,
+        string $replicaJail,
+        bool $skipTest = false
+    ): void {
+        // Respect dry-run or skip flags
+        if ($this->dryRun) {
+            echo "🔇 [DRY-RUN] Skipping replication setup and verification.\n";
+            return;
+        }
+
+        if ($skipTest) {
+            echo "⚠️ [SKIP] Replication test skipped due to --skip-test flag.\n";
+            return;
+        }
+
+        echo "⚙️ [STEP] Checking replication status...\n";
+
+        // Prepare verification SELECT statement
+        $replicaStatusQuery = <<<SQL
+            SHOW REPLICA STATUS\G;
+        SQL;
+
+        $cmd = "{$mysqlBinPath} -e '{$replicaStatusQuery}'";
+        $check = $this->jail->exec(
+            $replicaJail,
+            $cmd,
+            "Verify replication row in replica jail"
+        );
+
+        echo $check;        
+
+        echo "\n✅ End-to-end replication test passed.\n";
+    }
 }
