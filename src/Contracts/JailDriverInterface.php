@@ -45,14 +45,14 @@ interface JailDriverInterface
     public function isRunning(string $jailName): bool;
 
     
-    public function exec(string $jailName, string $command): string;
+    public function exec(string $jailName, string $command, string $description): string;
 
     public function execMySQLRemote(string $remoteHost, string $sshKey, string $jailName, string $query): string;
 
     /**
      * Run a service action inside the jail (e.g., start/stop mysql-server).
      */
-    public function runService(string $jailName, string $service, string $action): void;
+    public function runService(string $jailName, string $service, string $action, string $description): void;
 
     /**
      * Remove a file inside the jail.

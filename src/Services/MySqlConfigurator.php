@@ -96,21 +96,21 @@ class MySqlConfigurator
         //     "Stop MySQL in replica jail"
         // );
 
-        $this->jail->runService($replicaJail, 'mysql-server', 'stop');
+        $this->jail->runService($replicaJail, 'mysql-server', 'stop', 'Stop MySQL in replica jail');
 
         // $this->shell->run(
         //     "sudo iocage exec {$replicaJail} rm -f /var/db/mysql/auto.cnf",
         //     "Delete auto.cnf to regenerate server UUID"
         // );
 
-        $this->jail->exec($replicaJail, 'rm -f /var/db/mysql/auto.cnf');
+        $this->jail->exec($replicaJail, 'rm -f /var/db/mysql/auto.cnf'. 'Delete auto.cnf to regenerate server UUID');
 
         // $this->shell->run(
         //     "sudo iocage exec {$replicaJail} service mysql-server start",
         //     "Start MySQL in replica jail"
         // );
 
-        $this->jail->runService($replicaJail, 'mysql-server', 'start');
+        $this->jail->runService($replicaJail, 'mysql-server', 'start', 'Start MySQL in replica jail');
 
         $this->injectReplicationSQL($replicaJail, $snapshotName, $meta);
     }
@@ -171,14 +171,22 @@ class MySqlConfigurator
         SHOW REPLICA STATUS\G;
         EOD;
 
-        file_put_contents('/tmp/replica_setup.sql', $sql);
+         $tempSqlFile = '/tmp/replica_setup.sql';
+        file_put_contents($tempSqlFile, $sql);
 
         $mysqlBinPath = \Config::get('MYSQL_BIN_PATH');
+        $command = "{$mysqlBinPath} < {$tempSqlFile}";
 
-        $this->shell->run(
-            "sudo iocage exec {$replicaJail} {$mysqlBinPath} < /tmp/replica_setup.sql",
-            "Configure replication (inject SQL)"
-        );
+        $this->jail->exec($replicaJail, $command, "Configure replication (inject SQL)");
+
+        // file_put_contents('/tmp/replica_setup.sql', $sql);
+
+        // $mysqlBinPath = \Config::get('MYSQL_BIN_PATH');
+
+        // $this->shell->run(
+        //     "sudo iocage exec {$replicaJail} {$mysqlBinPath} < /tmp/replica_setup.sql",
+        //     "Configure replication (inject SQL)"
+        // );
 
         @unlink('/tmp/replica_setup.sql');
     }

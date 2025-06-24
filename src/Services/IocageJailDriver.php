@@ -99,11 +99,11 @@ class IocageJailDriver implements JailDriverInterface
         }
     }
 
-    public function exec(string $jailName, string $command): string
+    public function exec(string $jailName, string $command, string $description): string
     {
         return $this->shell->shell(
             "sudo iocage exec {$jailName} {$command}",
-            "Execute inside jail '{$jailName}'"
+            $description
         );
     }
 
@@ -118,11 +118,11 @@ class IocageJailDriver implements JailDriverInterface
         return $this->shell->shell($cmd, "Run MySQL remotely in jail '{$jailName}'");
     }
 
-    public function runService(string $jailName, string $service, string $action): void
+    public function runService(string $jailName, string $service, string $action, string $description): void
     {
         $this->shell->run(
             "sudo iocage exec {$jailName} service {$service} {$action}",
-            "Run service '{$service} {$action}' in jail '{$jailName}'"
+            $description
         );
     }
 
