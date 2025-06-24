@@ -43,11 +43,12 @@ interface JailDriverInterface
      * Check if the jail is currently running.
      */
     public function isRunning(string $jailName): bool;
-
     
-    public function exec(string $jailName, string $command, string $description = ''): string;
+    public function exec(string $jailName, string $command, string $description = ''): string;    
 
     public function execMySQLRemote(string $remoteHost, string $sshKey, string $jailName, string $query, string $description = ''): string;
+
+    public function execMySqlRemoteMultiLine(string $remoteHost, string $sshKey, string $jailName, string $sqlContent, string $description = ''): string;
 
     /**
      * Run a service action inside the jail (e.g., start/stop mysql-server).

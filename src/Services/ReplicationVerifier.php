@@ -3,6 +3,7 @@
 namespace Monsefrachid\MysqlReplication\Services;
 
 use Monsefrachid\MysqlReplication\Support\ShellRunner;
+use Monsefrachid\MysqlReplication\Contracts\JailDriverInterface;
 use RuntimeException;
 
 class ReplicationVerifier
@@ -11,7 +12,12 @@ class ReplicationVerifier
     private string $sshKey;
     private bool $dryRun;
 
-    public function __construct(ShellRunner $shell, string $sshKey = '', bool $dryRun = false)
+    public function __construct(
+        ShellRunner $shell, 
+        string $sshKey = '', 
+        bool $dryRun = false, 
+        protected JailDriverInterface $jail
+    )
     {
         $this->shell = $shell;
         $this->sshKey = $sshKey;
@@ -45,10 +51,17 @@ class ReplicationVerifier
         INSERT INTO ping (msg) VALUES ('replication check @ $date');
         SQL;
 
-        $mysqlBinPath = \Config::get('MYSQL_BIN_PATH');
+        // $mysqlBinPath = \Config::get('MYSQL_BIN_PATH');
+        // $insertCmd = "echo \"$testInsert\" | ssh -i {$this->sshKey} {$masterHost} \"sudo iocage exec {$masterJailName} {$mysqlBinPath}\"";
+        // $this->shell->run($insertCmd, "Insert test row on primary");
 
-        $insertCmd = "echo \"$testInsert\" | ssh -i {$this->sshKey} {$masterHost} \"sudo iocage exec {$masterJailName} {$mysqlBinPath}\"";
-        $this->shell->run($insertCmd, "Insert test row on primary");
+        $this->jail->execMySqlRemoteMultiLine(
+            $masterHost,
+            $this->sshKey,
+            $masterJailName,
+            $testInsert,
+            "Insert test row on primary"
+        );
 
         sleep(4);
 
@@ -56,7 +69,16 @@ class ReplicationVerifier
         SELECT msg FROM testdb.ping WHERE msg = "replication check @ $date";
         SQL;
 
-        $check = shell_exec("sudo iocage exec {$replicaJail} {$mysqlBinPath} -e '{$testSelect}'");
+        //$check = shell_exec("sudo iocage exec {$replicaJail} {$mysqlBinPath} -e '{$testSelect}'");
+
+        $mysqlBinPath = \Config::get('MYSQL_BIN_PATH');
+        $cmd = "{$mysqlBinPath} -e '{$testSelect}'";
+        $check = $this->jail->exec(
+            $replicaJail,
+            $cmd,
+            "Verify replication row in replica jail"
+        );
+
         if (!str_contains($check ?? '', 'replication check')) {
             throw new RuntimeException("❌ Replication test failed. Test row not found in replica.");
         }

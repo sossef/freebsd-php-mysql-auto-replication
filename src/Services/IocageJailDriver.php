@@ -109,7 +109,7 @@ class IocageJailDriver implements JailDriverInterface
             "sudo iocage exec {$jailName} {$command}",
             $description
         );
-    }
+    }        
 
     public function execMySQLRemote(
         string $remoteHost, 
@@ -126,6 +126,17 @@ class IocageJailDriver implements JailDriverInterface
         EOD;
 
         return $this->shell->shell($cmd, $description);
+    }
+
+    public function execMySqlRemoteMultiLine(string $remoteHost, string $sshKey, string $jailName, string $sqlContent, string $description = ''): string 
+    {
+        $bin = \Config::get('MYSQL_BIN_PATH');
+
+        $cmd = <<<EOD
+        echo "{$sqlContent}" | ssh -i {$sshKey} {$remoteHost} "sudo iocage exec {$jailName} sh -c '{$bin}'"
+        EOD;
+
+        return $this->shell->run($cmd, $description);
     }
 
     public function runService(
