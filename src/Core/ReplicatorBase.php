@@ -4,7 +4,7 @@ namespace Monsefrachid\MysqlReplication\Core;
 
 use Monsefrachid\MysqlReplication\Support\ShellRunner;
 use Monsefrachid\MysqlReplication\Support\MetaInfo;
-use Monsefrachid\MysqlReplication\Support\Logger;
+use Monsefrachid\MysqlReplication\Support\LoggerTrait;
 use Monsefrachid\MysqlReplication\Services\ZfsSnapshotManager;
 use Monsefrachid\MysqlReplication\Services\JailManager;
 use Monsefrachid\MysqlReplication\Contracts\JailDriverInterface;
@@ -22,6 +22,9 @@ use Monsefrachid\MysqlReplication\Services\ReplicationVerifier;
  */
 abstract class ReplicatorBase
 {
+
+    use LoggerTrait;
+
     /**
      * SSH user@host of the source jail (e.g., "user@192.168.1.10")
      *
@@ -230,9 +233,9 @@ abstract class ReplicatorBase
      */
     public function run(): void
     {
-
         Logger::load(__DIR__ . '/../../logs'); // default name: replication
-        Logger::get()->logStep("Starting replication...");
+
+        $this->logStep("Starting replication...");
 
         // Display replication source/target and runtime flags
         echo "\n🛠️ Running replication from '{$this->from}:{$this->sourceJail}' to '{$this->replicaJail}'\n\n";
@@ -256,11 +259,8 @@ abstract class ReplicatorBase
         // Step 1: Create or retrieve snapshot from source jail
         $snapshotName = $this->prepareSnapshot();
 
-        Logger::get()->renameLogFile($snapshotName);
-        Logger::get()->logStep("Snapshot created: $snapshotName");
-
-        Logger::load(__DIR__ . '/../../logs', $snapshotName);
-        Logger::get()->logStep("Snapshot ready: $snapshotName");
+        $this->renameLogFile($snapshotName);
+        $this->logStep("Snapshot created: $snapshotName");
 
         // Step 2: Ensure the replica jail's root directory is in place
         $this->jails->assertRootExists($this->replicaJail);
