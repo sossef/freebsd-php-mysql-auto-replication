@@ -23,7 +23,7 @@ trait LoggerTrait
     }
 
     /**
-     * Log a step header with formatting (⚙️ [STEP]).
+     * Log a step header with formatting ([STEP]).
      *
      * @param string $message
      */
@@ -33,7 +33,7 @@ trait LoggerTrait
     }
 
     /**
-     * Log a shell command being executed (➡️ [CMD]).
+     * Log a shell command being executed ([CMD]).
      *
      * @param string $message
      */
@@ -42,8 +42,33 @@ trait LoggerTrait
         Logger::get()->logCmd($message);
     }
 
+    public function logWarning(string $message): void
+    {
+        Logger::get()->logWarning($message);
+    }
+
     /**
-     * Log a dry-run skip message (🔇 [DRY-RUN]).
+     * Logs a success message.
+     *
+     * @param string $message
+     */
+    public function logSuccess(string $message): void
+    {
+        Logger::get()->logSuccess($message);
+    }
+
+    /**
+     * Logs an error message.
+     *
+     * @param string $message
+     */
+    public function logError(string $message): void
+    {
+        Logger::get()->logError($message);
+    }
+
+    /**
+     * Log a dry-run skip message ([DRY-RUN]).
      *
      * @param string $message
      */

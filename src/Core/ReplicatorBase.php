@@ -23,7 +23,6 @@ use Monsefrachid\MysqlReplication\Services\ReplicationVerifier;
  */
 abstract class ReplicatorBase
 {
-
     use LoggerTrait;
 
     /**
@@ -236,13 +235,14 @@ abstract class ReplicatorBase
     {
         Logger::load(__DIR__ . '/../../logs'); // default name: replication
 
-        $this->logStep("Starting replication...");
-
         // Display replication source/target and runtime flags
-        echo "\n🛠️ Running replication from '{$this->from}:{$this->sourceJail}' to '{$this->replicaJail}'\n\n";
-        echo 'Flags: force=' . ($this->force ? 'true' : 'false') .
+        $msg = "\n🛠️ Running replication from '{$this->from}:{$this->sourceJail}' to '{$this->replicaJail}'\n\n";
+        $msg .= 'Flags: force=' . ($this->force ? 'true' : 'false') .
             ', dryRun=' . ($this->dryRun ? 'true' : 'false') .
             ', skipTest=' . ($this->skipTest ? 'true' : 'false') . "\n";
+            
+        echo $msg;
+        $this->log($msg);
 
         // Check if the target replica jail already exists
         if ($this->jails->exists($this->replicaJail)) {

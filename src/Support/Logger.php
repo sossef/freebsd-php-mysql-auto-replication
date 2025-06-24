@@ -133,7 +133,7 @@ class Logger
     }
 
     /**
-     * Logs a structured STEP message (⚙️).
+     * Logs a structured STEP message.
      *
      * @param string $message
      */
@@ -143,13 +143,43 @@ class Logger
     }
 
     /**
-     * Logs a command being run (➡️).
+     * Logs a command being run.
      *
      * @param string $message
      */
     public function logCmd(string $message): void
     {
         $this->log("➡️ [CMD] {$message}\n");
+    }
+
+    /**
+     * Logs a warning message.
+     *
+     * @param string $message
+     */
+    public function logWarning(string $message): void
+    {
+        $this->log("⚠️ [WARNING] {$message}\n");
+    }
+
+    /**
+     * Logs a success message.
+     *
+     * @param string $message
+     */
+    public function logSuccess(string $message): void
+    {
+        $this->log("✅ [SUCCESS] {$message}\n");
+    }
+
+    /**
+     * Logs an error message.
+     *
+     * @param string $message
+     */
+    public function logError(string $message): void
+    {
+        $this->log("❌ [ERROR] {$message}\n");
     }
 
     /**
