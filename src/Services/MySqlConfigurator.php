@@ -85,7 +85,7 @@ class MySqlConfigurator
     private function updateMyCnf(string $mycnfPath): void
     {
         if ($this->shell->isDryRun()) {
-            $this->logDry("Skipping file read/write for {$mycnfPath}");
+            $this->logDryRun("Skipping file read/write for {$mycnfPath}");
             return;
         }
 

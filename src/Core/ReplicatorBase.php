@@ -294,7 +294,7 @@ abstract class ReplicatorBase
         }
 
         $this->logInfo("See report in logs/" . $this->getLogFileName() . "\n");
-        $this->log("\n\n{$replicaStatus}\n\n", false);         
+        $this->log("\n{$replicaStatus}\n", false);         
     }
 
     /**
