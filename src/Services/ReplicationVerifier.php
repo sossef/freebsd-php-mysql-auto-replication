@@ -4,6 +4,7 @@ namespace Monsefrachid\MysqlReplication\Services;
 
 use Monsefrachid\MysqlReplication\Support\ShellRunner;
 use Monsefrachid\MysqlReplication\Support\Config;
+use Monsefrachid\MysqlReplication\Support\LoggerTrait;
 use Monsefrachid\MysqlReplication\Contracts\JailDriverInterface;
 use RuntimeException;
 
@@ -19,6 +20,8 @@ use RuntimeException;
  */
 class ReplicationVerifier
 {
+    use LoggerTrait;
+    
     private ShellRunner $shell;
     private string $sshKey;
     private bool $dryRun;
