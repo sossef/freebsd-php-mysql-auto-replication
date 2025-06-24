@@ -44,12 +44,7 @@ class Logger
     }
 
     /**
-     * Initializes the singleton Logger instance.
-     *
-     * This should be called once per process (typically in your entry script or
-     * at the start of ReplicatorBase::run). If the snapshot name is not yet known,
-     * a temporary default name like "replication" will be used. The file can later
-     * be renamed using Logger::renameLogFile().
+     * Initializes the singleton Logger instance.  
      *
      * @param string      $directory  The directory where the log file should be stored.
      * @param string|null $name       Optional name for the log file (e.g., snapshot name).
@@ -59,7 +54,7 @@ class Logger
         // Only initialize once — subsequent calls are ignored
         if (self::$instance === null) {
             // Use default name if none provided
-            $name = $name ?? 'replication';
+            $name = $name ?? 'tmp';
 
             // Create the singleton instance
             self::$instance = new self($directory, $name);

@@ -233,7 +233,7 @@ abstract class ReplicatorBase
      */
     public function run(): void
     {
-        Logger::load(__DIR__ . '/../../logs'); // default name: replication
+        Logger::load(__DIR__ . '/../../logs'); // default name: tmp
 
         // Display replication source/target and runtime flags
         $this->log("\n🛠️ Running replication from '{$this->from}:{$this->sourceJail}' to '{$this->replicaJail}'\n\n");
@@ -251,7 +251,7 @@ abstract class ReplicatorBase
             } else {
                 // Otherwise, halt execution to avoid accidental overwrite
                 $this->logError("Jail '{$this->replicaJail}' already exists. Use --force to overwrite.\n");
-                
+
                 exit(1);
             }
         }
