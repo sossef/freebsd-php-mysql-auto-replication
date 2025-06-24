@@ -35,16 +35,25 @@ interface JailDriverInterface
     public function assertJailRootExists(string $jailName): void;
 
     /**
-     * Start the specified iocage jail.
+     * Start the specified jail.
      *
      * @param string $jailName The name of the jail to start.
      *
      * @return void
      */
-    public function start(string $jailName): void;
+    public function startJail(string $jailName): void;
 
     /**
-     * Check if the specified iocage jail is currently running.
+     * Stops the specified jail.
+     *
+     * @param string $jailName The name of the jail to start.
+     *
+     * @return void
+     */
+    public function stopJail(string $jailName): void;
+
+    /**
+     * Check if the specified jail is currently running.
      *
      * @param string $jailName The name of the jail to check.
      *
@@ -53,7 +62,7 @@ interface JailDriverInterface
     public function isRunning(string $jailName): bool;
     
     /**
-     * Execute a command inside a local iocage jail.
+     * Execute a command inside a local jail.
      *
      * @param string $jailName   The name of the local jail to execute the command in.
      * @param string $command    The shell command to execute inside the jail.
@@ -131,7 +140,7 @@ interface JailDriverInterface
     public function getJailRootPath(string $jailName): string;
 
     /**
-     * Get the path to the iocage configuration file for the specified jail.
+     * Get the path to the configuration file for the specified jail.
      *
      * @param string $jailName The name of the jail.
      *

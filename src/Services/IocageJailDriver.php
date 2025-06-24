@@ -52,23 +52,24 @@ class IocageJailDriver implements JailDriverInterface
         );
     }
 
-    /**
-     * Start the specified jail using iocage.
-     *
-     * @param string $jailName
-     * @return void
-     * @throws RuntimeException if the jail fails to start
+     /**
+     * {@inheritdoc}
      */
-    public function start(string $jailName): void
+    public function startJail(string $jailName): void
     {
         $this->shell->run("sudo iocage start {$jailName}", "Start replica jail");
     }
 
     /**
-     * Check if the specified jail is currently running.
-     *
-     * @param string $jailName
-     * @return bool
+     * {@inheritdoc}
+     */
+    public function stopJail(string $jailName): void
+    {
+        $this->shell->run("sudo iocage stop {$jailName}", "Stop replica jail");
+    }
+
+     /**
+     * {@inheritdoc}
      */
     public function isRunning(string $jailName): bool
     {
@@ -81,7 +82,7 @@ class IocageJailDriver implements JailDriverInterface
         return $status === 'up';
     }
 
-    /**
+     /**
      * {@inheritdoc}
      */
     public function assertJailRootExists(string $jailName): void
@@ -99,6 +100,9 @@ class IocageJailDriver implements JailDriverInterface
         }
     }
 
+     /**
+     * {@inheritdoc}
+     */
     public function exec(
         string $jailName, 
         string $command, 
@@ -111,6 +115,9 @@ class IocageJailDriver implements JailDriverInterface
         );
     }        
 
+     /**
+     * {@inheritdoc}
+     */
     public function execMySQLRemote(
         string $remoteHost, 
         string $sshKey, 
@@ -139,6 +146,9 @@ EOD;
         return $this->shell->run($cmd, $description);
     }
 
+     /**
+     * {@inheritdoc}
+     */
     public function runService(
         string $jailName, 
         string $service, 
@@ -152,6 +162,9 @@ EOD;
         );
     }
 
+     /**
+     * {@inheritdoc}
+     */
     public function removeFile(
         string $jailName, 
         string $filePath
@@ -163,6 +176,9 @@ EOD;
         );
     }
 
+     /**
+     * {@inheritdoc}
+     */
     public function enableBoot(string $jailName): void
     {
         $this->shell->run(
@@ -171,31 +187,49 @@ EOD;
         );
     }
 
+     /**
+     * {@inheritdoc}
+     */
     public function getJailRootPath(string $jailName): string
     {
         return \Config::get('IOCAGE_JAILS_MOUNT_PATH') . "/{$jailName}/root";
     }
 
+     /**
+     * {@inheritdoc}
+     */
     public function getJailConfigPath(string $jailName): string
     {
         return \Config::get('IOCAGE_JAILS_MOUNT_PATH') . "/{$jailName}/config.json";
     }
 
+     /**
+     * {@inheritdoc}
+     */
     public function getSnapshotBackupDir(): string
     {
         return \Config::get('IOCAGE_SNAPSHOT_BACKUP_DIR');
     }
 
+     /**
+     * {@inheritdoc}
+     */
     public function getJailsMountPath(): string
     {
         return \Config::get('IOCAGE_JAILS_MOUNT_PATH');
     }
 
+     /**
+     * {@inheritdoc}
+     */
     public function getJailsDatasetPath(): string
     {
         return \Config::get('IOCAGE_JAILS_DATASET_PATH');
     }
 
+     /**
+     * {@inheritdoc}
+     */
     public function getJailZfsDatasetPath(): string
     {
         return \Config::get('IOCAGE_JAIL_ZFS_DATASET_PATH');

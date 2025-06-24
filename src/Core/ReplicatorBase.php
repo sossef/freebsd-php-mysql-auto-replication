@@ -254,7 +254,7 @@ abstract class ReplicatorBase
 
         // Step 3: Configure system files and start the replica jail
         $this->configurator->configure($this->replicaJail);
-        $this->jails->start($this->replicaJail);
+        $this->jails->startJail($this->replicaJail);
 
         // Step 4: Transfer required SSL certificates to replica jail
         $this->transferCertificates();

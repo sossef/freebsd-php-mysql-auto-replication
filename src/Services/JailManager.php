@@ -56,7 +56,7 @@ class JailManager
      */
     public function start(string $jailName): void
     {
-        $this->driver->start($jailName);
+        $this->driver->startJail($jailName);
     }
 
     /**
