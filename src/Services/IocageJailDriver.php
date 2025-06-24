@@ -99,7 +99,11 @@ class IocageJailDriver implements JailDriverInterface
         }
     }
 
-    public function exec(string $jailName, string $command, string $description): string
+    public function exec(
+        string $jailName, 
+        string $command, 
+        string $description = ''
+    ): string
     {
         return $this->shell->shell(
             "sudo iocage exec {$jailName} {$command}",
@@ -107,7 +111,13 @@ class IocageJailDriver implements JailDriverInterface
         );
     }
 
-    public function execMySQLRemote(string $remoteHost, string $sshKey, string $jailName, string $query): string
+    public function execMySQLRemote(
+        string $remoteHost, 
+        string $sshKey, 
+        string $jailName, 
+        string $query, 
+        string $description = ''
+    ): string
     {
         $bin = \Config::get('MYSQL_BIN_PATH');
 
@@ -115,10 +125,15 @@ class IocageJailDriver implements JailDriverInterface
         ssh -i {$sshKey} {$remoteHost} "sudo iocage exec {$jailName} {$bin} -N -e '{$query}'"
         EOD;
 
-        return $this->shell->shell($cmd, "Run MySQL remotely in jail '{$jailName}'");
+        return $this->shell->shell($cmd, $description);
     }
 
-    public function runService(string $jailName, string $service, string $action, string $description): void
+    public function runService(
+        string $jailName, 
+        string $service, 
+        string $action, 
+        string $description = ''
+    ): void
     {
         $this->shell->run(
             "sudo iocage exec {$jailName} service {$service} {$action}",
@@ -126,7 +141,10 @@ class IocageJailDriver implements JailDriverInterface
         );
     }
 
-    public function removeFile(string $jailName, string $filePath): void
+    public function removeFile(
+        string $jailName, 
+        string $filePath
+    ): void
     {
         $this->shell->run(
             "sudo iocage exec {$jailName} rm -f {$filePath}",

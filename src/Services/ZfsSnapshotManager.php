@@ -72,7 +72,9 @@ class ZfsSnapshotManager
             $logPos = 1234;
         } else {
             // Step 1: Capture master status
-            $output = $this->jail->execMySQLRemote($remote, $this->sshKey, $jailName, 'SHOW MASTER STATUS');
+            // $cmdMasterStatus = "ssh -i {$this->sshKey} {$remote} \"sudo iocage exec {$jailName} {$mysqlBinPath} -N -e 'SHOW MASTER STATUS'\"";
+            // $output = $this->shell->shell($cmdMasterStatus, "Fetch MySQL master status on {$jailName}");
+            $output = $this->jail->execMySQLRemote($remote, $this->sshKey, $jailName, 'SHOW MASTER STATUS', "Fetch MySQL master status on {$jailName}");
             $lines = explode("\n", trim($output));
 
             if (count($lines) < 1 || !str_contains($lines[0], "\t")) {
