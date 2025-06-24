@@ -282,7 +282,7 @@ abstract class ReplicatorBase
         );
 
         // Step 6: Test replication health and correctness
-        $this->replicationVerifier->verify(
+        $this->replicationVerifier->verifyReplicaStatus(
             $this->meta->masterHost,
             $this->meta->masterJailName,
             $this->sourceJail,
