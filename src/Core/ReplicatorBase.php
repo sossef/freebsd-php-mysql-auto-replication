@@ -6,7 +6,7 @@ use Monsefrachid\MysqlReplication\Support\ShellRunner;
 use Monsefrachid\MysqlReplication\Support\MetaInfo;
 use Monsefrachid\MysqlReplication\Services\ZfsSnapshotManager;
 use Monsefrachid\MysqlReplication\Services\JailManager;
-use Monsefrachid\MysqlReplication\Services\IocageJailDriver;
+use Monsefrachid\MysqlReplication\Contracts\JailDriverInterface;
 use Monsefrachid\MysqlReplication\Services\JailConfigurator;
 use Monsefrachid\MysqlReplication\Services\CertManager;
 use Monsefrachid\MysqlReplication\Services\MySqlConfigurator;
@@ -92,6 +92,8 @@ abstract class ReplicatorBase
      */
     protected JailManager $jails;
 
+    protected JailDriverInterface $jailDriver;
+
     /**
      * Configures replica jail's network, hostname, and other flags.
      *
@@ -147,13 +149,13 @@ abstract class ReplicatorBase
         $this->sshKey = $sshKey;
 
         $this->shell = new ShellRunner($this->dryRun);
-        $jailDriver = new IocageJailDriver($this->shell);
-        $this->zfs = new ZfsSnapshotManager($this->shell, $this->sshKey, $jailDriver);
-        $this->jails = new JailManager($jailDriver);
-        $this->configurator = new JailConfigurator($this->shell, $jailDriver);
+        $this->jailDriver = new IocageJailDriver($this->shell);
+        $this->zfs = new ZfsSnapshotManager($this->shell, $this->sshKey, $this->jailDriver);
+        $this->jails = new JailManager($this->jailDriver);
+        $this->configurator = new JailConfigurator($this->shell, $this->jailDriver);
         $this->certs = new CertManager($this->shell, $this->sshKey);
-        $this->mysql = new MySqlConfigurator($this->shell, $this->sshKey, $jailDriver);
-        $this->verifier = new ReplicationVerifier($this->shell, $jailDriver, $this->sshKey, $this->dryRun);
+        $this->mysql = new MySqlConfigurator($this->shell, $this->sshKey, $this->jailDriver);
+        $this->verifier = new ReplicationVerifier($this->shell, $this->jailDriver, $this->sshKey, $this->dryRun);
     }
 
     abstract protected function prepareSnapshot(): string;
@@ -217,7 +219,8 @@ abstract class ReplicatorBase
 
     protected function loadMetaData(string $snapshotName): void
     {
-        $snapshotBackupPath = \Config::get('SNAPSHOT_BACKUP_DIR');
+        //$snapshotBackupPath = \Config::get('IOCAGE_SNAPSHOT_BACKUP_DIR');
+        $snapshotBackupPath = $this->jailDriver->getSnapshotBackupDir();
 
         $metaPath = "{$snapshotBackupPath}/{$snapshotName}.meta";
 

@@ -86,7 +86,7 @@ class IocageJailDriver implements JailDriverInterface
      */
     public function assertJailRootExists(string $jailName): void
     {
-        $rootPath = \Config::get('JAILS_MOUNT_PATH') . "/{$jailName}/root";
+        $rootPath = \Config::get('IOCAGE_JAILS_MOUNT_PATH') . "/{$jailName}/root";
 
         // 🛡 Skip check if dry-run is enabled
         if ($this->shell->isDryRun()) {
@@ -171,4 +171,28 @@ EOD;
         );
     }
 
+    public function getJailRootPath(string $jailName): string
+    {
+        return \Config::get('IOCAGE_JAILS_MOUNT_PATH') . "/{$jailName}/root";
+    }
+
+    public function getJailConfigPath(string $jailName): string
+    {
+        return \Config::get('IOCAGE_JAILS_MOUNT_PATH') . "/{$jailName}/config.json";
+    }
+
+    public function getSnapshotBackupDir(): string
+    {
+        return \Config::get('IOCAGE_SNAPSHOT_BACKUP_DIR');
+    }
+
+    public function getJailsMountPath(): string
+    {
+        return \Config::get('IOCAGE_JAILS_MOUNT_PATH');
+    }
+
+    public function getJailsDatasetPath(): string
+    {
+        return \Config::get('IOCAGE_JAILS_DATASET_PATH');
+    }
 }

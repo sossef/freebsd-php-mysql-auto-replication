@@ -37,7 +37,7 @@ class JailConfigurator
      */
     public function configure(string $jailName): void
     {
-        $configPath = \Config::get('JAILS_MOUNT_PATH') . "/{$jailName}/config.json";
+        $configPath = \Config::get('IOCAGE_JAILS_MOUNT_PATH') . "/{$jailName}/config.json";
 
         if ($this->shell->isDryRun()) {
             echo "🔇 [DRY-RUN] Skipping jail config update: {$configPath}\n";
@@ -77,7 +77,7 @@ class JailConfigurator
     {
         $used = [];
 
-        foreach (glob(\Config::get('JAILS_MOUNT_PATH') . '/*/config.json') as $file) {
+        foreach (glob(\Config::get('IOCAGE_JAILS_MOUNT_PATH') . '/*/config.json') as $file) {
             $data = json_decode(file_get_contents($file), true);
 
             if (!$data || !is_array($data)) {

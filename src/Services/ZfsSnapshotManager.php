@@ -44,8 +44,8 @@ class ZfsSnapshotManager
     {
         $this->shell = $shell;
         $this->sshKey = $sshKey;
-        $this->snapshotBackupPath = \Config::get('SNAPSHOT_BACKUP_DIR');
-        $this->jailsDatasetPath = \Config::get('JAILS_DATASET_PATH');
+        $this->snapshotBackupPath = \Config::get('IOCAGE_SNAPSHOT_BACKUP_DIR');
+        $this->jailsDatasetPath = \Config::get('IOCAGE_JAILS_DATASET_PATH');
     }
 
     /**

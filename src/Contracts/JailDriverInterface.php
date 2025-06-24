@@ -65,4 +65,9 @@ interface JailDriverInterface
      */
     public function enableBoot(string $jailName): void;
 
+    public function getJailRootPath(string $jailName): string;
+    public function getJailConfigPath(string $jailName): string;
+    public function getSnapshotBackupDir(): string;
+    public function getJailsDatasetPath(): string;
+    public function getJailsMountPath(): string;
 }
