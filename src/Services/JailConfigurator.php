@@ -3,6 +3,7 @@
 namespace Monsefrachid\MysqlReplication\Services;
 
 use Monsefrachid\MysqlReplication\Support\ShellRunner;
+use Monsefrachid\MysqlReplication\Contracts\JailDriverInterface;
 use RuntimeException;
 
 /**
