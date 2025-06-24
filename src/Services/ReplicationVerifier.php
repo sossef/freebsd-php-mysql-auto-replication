@@ -163,11 +163,11 @@ class ReplicationVerifier
         $this->log("🔍 Source_SSL_Allowed: $sslAllowed\n");
 
         if ($ioRunning !== 'Yes' || $sqlRunning !== 'Yes' || $sslAllowed !== 'Yes') {
-            $this->logError("Replica status check failed!\n\n");
+            $this->logError("Replica status check failed!\n");
             return [false, $check];
         } 
         
-        $this->logSuccess("Replica status check passed.\n\n");
+        $this->logSuccess("Replica status check passed.\n");
 
         return [true, $check];
     }

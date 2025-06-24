@@ -288,7 +288,7 @@ abstract class ReplicatorBase
         );
 
         if ($checkPassed) {            
-            $this->logSuccess("Replica setup complete and replication initialized. See report in logs/" . $this->getLogFileName());                   
+            $this->logSuccess("✅ Replica setup complete and replication initialized. See report in logs/" . $this->getLogFileName());                   
         } else {
             $this->logError("Replica setup complete but replica status check failed.");
         }
