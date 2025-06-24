@@ -4,6 +4,7 @@ namespace Monsefrachid\MysqlReplication\Core;
 
 use Monsefrachid\MysqlReplication\Support\ShellRunner;
 use Monsefrachid\MysqlReplication\Support\MetaInfo;
+use Monsefrachid\MysqlReplication\Support\Logger;
 use Monsefrachid\MysqlReplication\Services\ZfsSnapshotManager;
 use Monsefrachid\MysqlReplication\Services\JailManager;
 use Monsefrachid\MysqlReplication\Contracts\JailDriverInterface;
@@ -249,7 +250,10 @@ abstract class ReplicatorBase
         }
 
         // Step 1: Create or retrieve snapshot from source jail
-        $snapshot = $this->prepareSnapshot();
+        $snapshotName = $this->prepareSnapshot();
+
+        Logger::load(__DIR__ . '/../../logs', $snapshotName);
+        Logger::get()->logStep("Snapshot ready: $snapshotName");
 
         // Step 2: Ensure the replica jail's root directory is in place
         $this->jails->assertRootExists($this->replicaJail);
@@ -262,10 +266,10 @@ abstract class ReplicatorBase
         $this->transferCertificates();
 
         // Step 5: Load binlog metadata and configure MySQL replica settings
-        $this->loadMetaData($snapshot);
+        $this->loadMetaData($snapshotName);
         $this->mySqlConfigurator->configure(
             $this->replicaJail,
-            $snapshot,
+            $snapshotName,
             $this->meta
         );
 

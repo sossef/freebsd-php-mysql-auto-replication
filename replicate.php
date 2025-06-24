@@ -3,13 +3,10 @@
 
 require_once __DIR__ . '/vendor/autoload.php';
 
-use Monsefrachid\MysqlReplication\Support\Config;
-//use Monsefrachid\MysqlReplication\Support\Logger;
 use Monsefrachid\MysqlReplication\Core\ReplicatorFactory;
+use Monsefrachid\MysqlReplication\Support\Config;
 
 Config::load(__DIR__);
-
-//Logger::load(__DIR__ . '/../logs', $snapshotName);
 
 // Parse CLI arguments
 $options = getopt("", [
@@ -20,6 +17,7 @@ $options = getopt("", [
     "skip-test"
 ]);
 
+// Validate arguments
 if (!isset($options['from'], $options['to'])) {
     fwrite(STDERR, <<<USAGE
 
