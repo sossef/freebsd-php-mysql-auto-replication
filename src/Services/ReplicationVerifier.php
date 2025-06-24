@@ -182,6 +182,9 @@ class ReplicationVerifier
             }
         }
 
+        echo "Result\n\n";
+        print_r($result);
+
         return $result;
     }
 
