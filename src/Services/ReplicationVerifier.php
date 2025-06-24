@@ -11,12 +11,7 @@ class ReplicationVerifier
     private string $sshKey;
     private bool $dryRun;
 
-    public function __construct(
-        ShellRunner $shell, 
-        string $sshKey = '', 
-        bool $dryRun = false, 
-        protected JailDriverInterface $jail
-    )
+    public function __construct(ShellRunner $shell, string $sshKey = '', bool $dryRun = false)
     {
         $this->shell = $shell;
         $this->sshKey = $sshKey;
