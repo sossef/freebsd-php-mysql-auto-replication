@@ -83,7 +83,7 @@ class ShellRunner
             return "[DRY-RUN] (shell)";
         }
 
-        return shell_exec($cmd);
+        return shell_exec($cmd) ?? ''; 
     }
 
     /**
