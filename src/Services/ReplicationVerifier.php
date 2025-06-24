@@ -122,7 +122,7 @@ class ReplicationVerifier
     public function verifyReplicaStatus(
         string $replicaJail,
         bool $skipTest = false
-    ): ?string {
+    ): ?array {
         // Respect dry-run or skip flags
         if ($this->dryRun) {
             echo "🔇 [DRY-RUN] Skipping replication setup and verification.\n";
