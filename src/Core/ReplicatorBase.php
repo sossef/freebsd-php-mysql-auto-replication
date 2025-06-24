@@ -293,7 +293,7 @@ abstract class ReplicatorBase
             $this->logError("Replica setup complete but replica status check failed.");
         }
 
-        $this->log("\nSee report in logs/" . $this->getLogFileName());
+        $this->logInfo("\nSee report in logs/" . $this->getLogFileName() . "\n");
         $this->log("\n\n{$replicaStatus}\n\n", false);         
     }
 
