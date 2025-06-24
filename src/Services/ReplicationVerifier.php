@@ -51,17 +51,17 @@ CREATE TABLE IF NOT EXISTS ping (msg VARCHAR(100));
 INSERT INTO ping (msg) VALUES ('replication check @ $date');
 SQL;
 
-        // $mysqlBinPath = \Config::get('MYSQL_BIN_PATH');
-        // $insertCmd = "echo \"$testInsert\" | ssh -i {$this->sshKey} {$masterHost} \"sudo iocage exec {$masterJailName} {$mysqlBinPath}\"";
-        // $this->shell->run($insertCmd, "Insert test row on primary");
+        $mysqlBinPath = \Config::get('MYSQL_BIN_PATH');
+        $insertCmd = "echo \"$testInsert\" | ssh -i {$this->sshKey} {$masterHost} \"sudo iocage exec {$masterJailName} {$mysqlBinPath}\"";
+        $this->shell->run($insertCmd, "Insert test row on primary");
 
-        $this->jail->execMySqlRemoteMultiLine(
-            $masterHost,
-            $this->sshKey,
-            $masterJailName,
-            $testInsert,
-            "Insert test row on primary"
-        );
+        // $this->jail->execMySqlRemoteMultiLine(
+        //     $masterHost,
+        //     $this->sshKey,
+        //     $masterJailName,
+        //     $testInsert,
+        //     "Insert test row on primary"
+        // );
 
         sleep(4);
 
