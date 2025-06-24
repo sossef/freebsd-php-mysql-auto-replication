@@ -4,6 +4,7 @@ namespace Monsefrachid\MysqlReplication\Services;
 
 use Monsefrachid\MysqlReplication\Support\ShellRunner;
 use Monsefrachid\MysqlReplication\Support\MetaInfo;
+use Monsefrachid\MysqlReplication\Contracts\JailDriverInterface;
 use RuntimeException;
 
 /**
@@ -31,7 +32,11 @@ class MySqlConfigurator
      * @param ShellRunner $shell
      * @param string $sshKey
      */
-    public function __construct(ShellRunner $shell, string $sshKey)
+    public function __construct(
+        ShellRunner $shell, 
+        string $sshKey,
+        protected JailDriverInterface $jail
+    )
     {
         $this->shell = $shell;
         $this->sshKey = $sshKey;
@@ -86,20 +91,26 @@ class MySqlConfigurator
         }
 
         // Restart MySQL and regenerate UUID
-        $this->shell->run(
-            "sudo iocage exec {$replicaJail} service mysql-server stop",
-            "Stop MySQL in replica jail"
-        );
+        // $this->shell->run(
+        //     "sudo iocage exec {$replicaJail} service mysql-server stop",
+        //     "Stop MySQL in replica jail"
+        // );
 
-        $this->shell->run(
-            "sudo iocage exec {$replicaJail} rm -f /var/db/mysql/auto.cnf",
-            "Delete auto.cnf to regenerate server UUID"
-        );
+        $this->jail->runService($replicaJail, 'mysql-server', 'stop');
 
-        $this->shell->run(
-            "sudo iocage exec {$replicaJail} service mysql-server start",
-            "Start MySQL in replica jail"
-        );
+        // $this->shell->run(
+        //     "sudo iocage exec {$replicaJail} rm -f /var/db/mysql/auto.cnf",
+        //     "Delete auto.cnf to regenerate server UUID"
+        // );
+
+        $this->jail->exec($replicaJail, 'rm -f /var/db/mysql/auto.cnf');
+
+        // $this->shell->run(
+        //     "sudo iocage exec {$replicaJail} service mysql-server start",
+        //     "Start MySQL in replica jail"
+        // );
+
+        $this->jail->runService($replicaJail, 'mysql-server', 'start');
 
         $this->injectReplicationSQL($replicaJail, $snapshotName, $meta);
     }

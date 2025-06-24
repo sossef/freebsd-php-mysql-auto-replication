@@ -152,7 +152,7 @@ abstract class ReplicatorBase
         $this->jails = new JailManager($jailDriver);
         $this->configurator = new JailConfigurator($this->shell, $jailDriver);
         $this->certs = new CertManager($this->shell, $this->sshKey);
-        $this->mysql = new MySqlConfigurator($this->shell, $this->sshKey);
+        $this->mysql = new MySqlConfigurator($this->shell, $this->sshKey, $jailDriver);
         $this->verifier = new ReplicationVerifier($this->shell, $this->sshKey, $this->dryRun);
     }
 
