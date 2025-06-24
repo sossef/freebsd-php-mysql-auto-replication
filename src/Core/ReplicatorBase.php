@@ -149,14 +149,47 @@ abstract class ReplicatorBase
         $this->skipTest = $skipTest;
         $this->sshKey = $sshKey;
 
-        $this->shell = new ShellRunner($this->dryRun);
-        $this->jailDriver = new IocageJailDriver($this->shell);
-        $this->zfs = new ZfsSnapshotManager($this->shell, $this->sshKey, $this->jailDriver);
-        $this->jails = new JailManager($this->jailDriver);
-        $this->configurator = new JailConfigurator($this->shell, $this->jailDriver);
-        $this->certs = new CertManager($this->shell, $this->sshKey);
-        $this->mysql = new MySqlConfigurator($this->shell, $this->sshKey, $this->jailDriver);
-        $this->verifier = new ReplicationVerifier($this->shell, $this->jailDriver, $this->sshKey, $this->dryRun);
+        $this->shell = new ShellRunner(
+            $this->dryRun
+        );
+
+        $this->jailDriver = new IocageJailDriver(
+            $this->shell
+        );
+
+        $this->zfs = new ZfsSnapshotManager(
+            $this->shell, 
+            $this->sshKey, 
+            $this->jailDriver
+        );
+
+        $this->jails = new JailManager(
+            $this->jailDriver
+        );
+
+        $this->configurator = new JailConfigurator(
+            $this->shell, 
+            $this->jailDriver
+        );
+
+        $this->certs = new CertManager(
+            $this->shell, 
+            $this->sshKey, 
+            $this->jailDriver
+        );
+
+        $this->mysql = new MySqlConfigurator(
+            $this->shell, 
+            $this->sshKey, 
+            $this->jailDriver
+        );
+
+        $this->verifier = new ReplicationVerifier(
+            $this->shell, 
+            $this->jailDriver, 
+            $this->sshKey, 
+            $this->dryRun
+        );
     }
 
     abstract protected function prepareSnapshot(): string;
