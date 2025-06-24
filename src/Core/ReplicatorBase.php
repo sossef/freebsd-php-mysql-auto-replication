@@ -116,7 +116,7 @@ abstract class ReplicatorBase
      *
      * @var JailConfigurator
      */
-    protected JailConfigurator $configurator;
+    protected JailConfigurator $jailConfigurator;
 
     /**
      * Transfers SSL certs from remote source jail to replica.
@@ -137,7 +137,7 @@ abstract class ReplicatorBase
      *
      * @var ReplicationVerifier
      */
-    protected ReplicationVerifier $verifier;
+    protected ReplicationVerifier $replicationVerifier;
 
     /**
      * Constructor
@@ -185,7 +185,7 @@ abstract class ReplicatorBase
         $this->jails = new JailManager($this->jailDriver);
 
         // Initialize jail configurator, responsible for boot, fstab, and file system setup
-        $this->configurator = new JailConfigurator(
+        $this->jailConfigurator = new JailConfigurator(
             $this->shell, 
             $this->jailDriver
         );
@@ -198,14 +198,14 @@ abstract class ReplicatorBase
         );
 
         // Initialize MySQL configurator, handles replication setup inside the replica jail
-        $this->mysql = new MySqlConfigurator(
+        $this->mySqlConfigurator = new MySqlConfigurator(
             $this->shell, 
             $this->jailDriver,
             $this->sshKey
         );
 
         // Initialize verifier, performs final validation to ensure replication is successful
-        $this->verifier = new ReplicationVerifier(
+        $this->replicationVerifier = new ReplicationVerifier(
             $this->shell, 
             $this->jailDriver, 
             $this->sshKey, 
@@ -235,12 +235,14 @@ abstract class ReplicatorBase
             ', dryRun=' . ($this->dryRun ? 'true' : 'false') .
             ', skipTest=' . ($this->skipTest ? 'true' : 'false') . "\n";
 
-        // Step 0: Handle existing replica jail
+        // Check if the target replica jail already exists
         if ($this->jails->exists($this->replicaJail)) {
             if ($this->force) {
+                // If --force flag is set, destroy the existing jail to proceed
                 echo "⚠️ [FORCE] Jail '{$this->replicaJail}' already exists. Destroying...\n";
                 $this->jails->destroy($this->replicaJail);
             } else {
+                // Otherwise, halt execution to avoid accidental overwrite
                 echo "❌ Jail '{$this->replicaJail}' already exists. Use --force to overwrite.\n";
                 exit(1);
             }
@@ -253,7 +255,7 @@ abstract class ReplicatorBase
         $this->jails->assertRootExists($this->replicaJail);
 
         // Step 3: Configure system files and start the replica jail
-        $this->configurator->configure($this->replicaJail);
+        $this->jailConfigurator->configure($this->replicaJail);
         $this->jails->startJail($this->replicaJail);
 
         // Step 4: Transfer required SSL certificates to replica jail
@@ -261,7 +263,7 @@ abstract class ReplicatorBase
 
         // Step 5: Load binlog metadata and configure MySQL replica settings
         $this->loadMetaData($snapshot);
-        $this->mysql->configure(
+        $this->mySqlConfigurator->configure(
             $this->replicaJail,
             $snapshot,
             $this->meta

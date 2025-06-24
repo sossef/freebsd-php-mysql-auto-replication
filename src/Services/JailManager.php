@@ -54,9 +54,20 @@ class JailManager
      * @param string $jailName
      * @return void
      */
-    public function start(string $jailName): void
+    public function startJail(string $jailName): void
     {
         $this->driver->startJail($jailName);
+    }
+
+    /**
+     * Stop a jail via the jail driver.
+     *
+     * @param string $jailName
+     * @return void
+     */
+    public function stopJail(string $jailName): void
+    {
+        $this->driver->stopJail($jailName);
     }
 
     /**
