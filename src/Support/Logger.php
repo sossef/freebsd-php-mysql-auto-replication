@@ -21,6 +21,11 @@ class Logger
     private string $logFilePath;
 
     /**
+     * Log file name
+     */
+    private string $logFileName;
+
+    /**
      * Whether logging is enabled.
      */
     private bool $enabled = false;
@@ -33,11 +38,11 @@ class Logger
      */
     private function __construct(string $directory, string $snapshotName)
     {
-        $timestamp = date('Ymd_His'); // Format like 20250624_153045
-        $filename = "{$snapshotName}_{$timestamp}.log";
+        $timestamp = date('YmdHis'); // Format like 20250624153045
+        $this->logFileName = "{$snapshotName}_{$timestamp}.log";
 
         // Ensure trailing slash and construct full path
-        $this->logFilePath = rtrim($directory, '/') . '/' . $filename;
+        $this->logFilePath = rtrim($directory, '/') . '/' . $this->logFileName;
 
         // Enable logging
         $this->enabled = true;
@@ -87,11 +92,11 @@ class Logger
     public function renameLogFile(string $newName): void
     {
         // Generate a new timestamped filename using the provided snapshot name
-        $timestamp = date('Ymd_His');
-        $newFilename = "{$newName}_{$timestamp}.log";
+        $timestamp = date('YmdHis');
+        $this->logFileName = "{$newName}_{$timestamp}.log";
 
         // Determine the full path to the new log file
-        $newPath = dirname($this->logFilePath) . '/' . $newFilename;
+        $newPath = dirname($this->logFilePath) . '/' . $this->logFileName;
 
         // Rename the current file only if it exists
         if (file_exists($this->logFilePath)) {
@@ -102,9 +107,9 @@ class Logger
         }
     }
 
-    public function getLogFilePath(): string
+    public function getLogFileName(): string
     {
-        return $this->logFilePath;
+        return $this->logFileName;
     }
 
     /**

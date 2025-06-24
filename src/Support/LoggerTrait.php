@@ -12,9 +12,9 @@ namespace Monsefrachid\MysqlReplication\Support;
  */
 trait LoggerTrait
 {
-    public function getLogFilePath()
+    public function getLogFileName()
     {
-        return Logger::get()->getLogFilePath();
+        return Logger::get()->getLogFileName();
     }
 
     /**
