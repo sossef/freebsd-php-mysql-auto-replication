@@ -39,13 +39,13 @@ class ZfsSnapshotManager
     public function __construct(
         ShellRunner $shell,
         string $sshKey,
-        protected JailDriverInterface $jail
+        protected JailDriverInterface $jailDriver
     )
     {
         $this->shell = $shell;
         $this->sshKey = $sshKey;
-        $this->snapshotBackupPath = \Config::get('IOCAGE_SNAPSHOT_BACKUP_DIR');
-        $this->jailsDatasetPath = \Config::get('IOCAGE_JAILS_DATASET_PATH');
+        $this->snapshotBackupPath = $this->jailDriver->getSnapshotBackupDir();
+        $this->jailsDatasetPath = $this->jailDriver->getJailsDatasetPath();
     }
 
     /**
@@ -72,7 +72,7 @@ class ZfsSnapshotManager
             $logPos = 1234;
         } else {
             // Step 1: Capture master status
-            $output = $this->jail->execMySQLRemote($remote, $this->sshKey, $jailName, 'SHOW MASTER STATUS', "Fetch MySQL master status on {$jailName}");
+            $output = $this->jailDriver->execMySQLRemote($remote, $this->sshKey, $jailName, 'SHOW MASTER STATUS', "Fetch MySQL master status on {$jailName}");
             $lines = explode("\n", trim($output));
 
             if (count($lines) < 1 || !str_contains($lines[0], "\t")) {
