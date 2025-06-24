@@ -133,4 +133,13 @@ class IocageJailDriver implements JailDriverInterface
             "Remove file '{$filePath}' in jail '{$jailName}'"
         );
     }
+
+    public function enableBoot(string $jailName): void
+    {
+        $this->shell->run(
+            "sudo iocage set boot=on {$jailName}",
+            "Enable and mount {$jailName} jail"
+        );
+    }
+
 }

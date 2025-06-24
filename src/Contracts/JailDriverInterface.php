@@ -59,4 +59,9 @@ interface JailDriverInterface
      */
     public function removeFile(string $jailName, string $filePath): void;
 
+    /**
+     * Enable jail to start on boot.
+     */
+    public function enableBoot(string $jailName): void;
+
 }

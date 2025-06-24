@@ -20,7 +20,10 @@ class JailConfigurator
     /**
      * @param ShellRunner $shell
      */
-    public function __construct(ShellRunner $shell)
+    public function __construct(
+        ShellRunner $shell, 
+        protected JailDriverInterface $jail
+    )
     {
         $this->shell = $shell;
     }
@@ -61,10 +64,12 @@ class JailConfigurator
 
         file_put_contents($configPath, json_encode($config, JSON_PRETTY_PRINT));
 
-        $this->shell->run(
-            "sudo iocage set boot=on {$jailName}",
-            "Enable and mount {$jailName} jail"
-        );
+        // $this->shell->run(
+        //     "sudo iocage set boot=on {$jailName}",
+        //     "Enable and mount {$jailName} jail"
+        // );
+
+        $this->jail->enableBoot($jailName);
     }
 
     /**
