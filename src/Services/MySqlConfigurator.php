@@ -35,7 +35,7 @@ class MySqlConfigurator
     public function __construct(
         ShellRunner $shell, 
         string $sshKey,
-        protected JailDriverInterface $jail
+        protected JailDriverInterface $jailDriver
     )
     {
         $this->shell = $shell;
@@ -54,7 +54,7 @@ class MySqlConfigurator
      */
     public function configure(string $replicaJail, string $snapshotName, MetaInfo $meta): void
     {
-        $replicaRoot = \Config::get('IOCAGE_JAILS_MOUNT_PATH') . "/{$replicaJail}/root";
+        $replicaRoot = $this->jailDriver->getJailsMountPath() . "/{$replicaJail}/root";
         $mycnfPath = "{$replicaRoot}/usr/local/etc/mysql/my.cnf";
 
         // Modify config contents (only in non-dry-run mode)
@@ -96,21 +96,21 @@ class MySqlConfigurator
         //     "Stop MySQL in replica jail"
         // );
 
-        $this->jail->runService($replicaJail, 'mysql-server', 'stop', 'Stop MySQL in replica jail');
+        $this->jailDriver->runService($replicaJail, 'mysql-server', 'stop', 'Stop MySQL in replica jail');
 
         // $this->shell->run(
         //     "sudo iocage exec {$replicaJail} rm -f /var/db/mysql/auto.cnf",
         //     "Delete auto.cnf to regenerate server UUID"
         // );
 
-        $this->jail->exec($replicaJail, 'rm -f /var/db/mysql/auto.cnf', 'Delete auto.cnf to regenerate server UUID');
+        $this->jailDriver->exec($replicaJail, 'rm -f /var/db/mysql/auto.cnf', 'Delete auto.cnf to regenerate server UUID');
 
         // $this->shell->run(
         //     "sudo iocage exec {$replicaJail} service mysql-server start",
         //     "Start MySQL in replica jail"
         // );
 
-        $this->jail->runService($replicaJail, 'mysql-server', 'start', 'Start MySQL in replica jail');
+        $this->jailDriver->runService($replicaJail, 'mysql-server', 'start', 'Start MySQL in replica jail');
 
         $this->injectReplicationSQL($replicaJail, $snapshotName, $meta);
     }
@@ -124,7 +124,7 @@ class MySqlConfigurator
     {
         $ids = [];
 
-        foreach (glob(\Config::get('IOCAGE_JAILS_MOUNT_PATH') . '/*/root/usr/local/etc/mysql/my.cnf') as $file) {
+        foreach (glob($this->jailDriver->getJailsMountPath() . '/*/root/usr/local/etc/mysql/my.cnf') as $file) {
             $text = file_get_contents($file);
             if (preg_match('/server-id\s*=\s*(\d+)/i', $text, $m)) {
                 $ids[] = (int)$m[1];
@@ -177,7 +177,7 @@ class MySqlConfigurator
         $mysqlBinPath = \Config::get('MYSQL_BIN_PATH');
         $command = "{$mysqlBinPath} < {$tempSqlFile}";
 
-        $this->jail->exec($replicaJail, $command, "Configure replication (inject SQL)");
+        $this->jailDriver->exec($replicaJail, $command, "Configure replication (inject SQL)");
 
         // file_put_contents('/tmp/replica_setup.sql', $sql);
 

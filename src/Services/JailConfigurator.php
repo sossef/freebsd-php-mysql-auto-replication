@@ -23,7 +23,7 @@ class JailConfigurator
      */
     public function __construct(
         ShellRunner $shell, 
-        protected JailDriverInterface $jail
+        protected JailDriverInterface $jailDriver
     )
     {
         $this->shell = $shell;
@@ -37,7 +37,7 @@ class JailConfigurator
      */
     public function configure(string $jailName): void
     {
-        $configPath = \Config::get('IOCAGE_JAILS_MOUNT_PATH') . "/{$jailName}/config.json";
+        $configPath = $this->jailDriver->getJailsMountPath() . "/{$jailName}/config.json";
 
         if ($this->shell->isDryRun()) {
             echo "🔇 [DRY-RUN] Skipping jail config update: {$configPath}\n";
@@ -65,7 +65,7 @@ class JailConfigurator
 
         file_put_contents($configPath, json_encode($config, JSON_PRETTY_PRINT));
 
-        $this->jail->enableBoot($jailName);
+        $this->jailDriver->enableBoot($jailName);
     }
 
     /**
@@ -77,7 +77,7 @@ class JailConfigurator
     {
         $used = [];
 
-        foreach (glob(\Config::get('IOCAGE_JAILS_MOUNT_PATH') . '/*/config.json') as $file) {
+        foreach (glob($this->jailDriver->getJailsMountPath() . '/*/config.json') as $file) {
             $data = json_decode(file_get_contents($file), true);
 
             if (!$data || !is_array($data)) {

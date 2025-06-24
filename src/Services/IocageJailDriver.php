@@ -86,7 +86,7 @@ class IocageJailDriver implements JailDriverInterface
      */
     public function assertJailRootExists(string $jailName): void
     {
-        $rootPath = \Config::get('IOCAGE_JAILS_MOUNT_PATH') . "/{$jailName}/root";
+        $rootPath = $this->getJailsMountPath() . "/{$jailName}/root";
 
         // 🛡 Skip check if dry-run is enabled
         if ($this->shell->isDryRun()) {

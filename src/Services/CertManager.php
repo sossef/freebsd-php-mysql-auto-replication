@@ -27,7 +27,7 @@ class CertManager
      * @param ShellRunner $shell
      * @param string $sshKey
      */
-    public function __construct(ShellRunner $shell, string $sshKey)
+    public function __construct(ShellRunner $shell, string $sshKey, protected JailDriverInterface $jailDriver)
     {
         $this->shell = $shell;
         $this->sshKey = $sshKey;
@@ -43,7 +43,7 @@ class CertManager
      */
     public function transferCerts(string $remote, string $sourceJail, string $replicaJail): void
     {
-        $replicaRoot = \Config::get('IOCAGE_JAILS_MOUNT_PATH') . "/{$replicaJail}/root";
+        $replicaRoot = $this->jailDriver->getJailsMountPath() . "/{$replicaJail}/root";
         $certTarget = "{$replicaRoot}" . \Config::get('DB_SSL_PATH');
 
         $this->shell->run(
@@ -74,7 +74,7 @@ class CertManager
 
     public function transferCertsFromLocal(string $replicaJail): void
     {
-        $replicaRoot = \Config::get('IOCAGE_JAILS_MOUNT_PATH') . "/{$replicaJail}/root";
+        $replicaRoot = $this->jailDriver->getJailsMountPath() . "/{$replicaJail}/root";
         $certTarget = "{$replicaRoot}" . \Config::get('DB_SSL_PATH');
         $localSourcePath = "/usr/local/share/mysql_certs/primary";
 
