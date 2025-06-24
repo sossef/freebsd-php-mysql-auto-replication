@@ -102,6 +102,11 @@ class Logger
         }
     }
 
+    public function getLogFilePath()
+    {
+        return $this->logFilePath;
+    }
+
     /**
      * Writes raw text to the log file (without echoing).
      *

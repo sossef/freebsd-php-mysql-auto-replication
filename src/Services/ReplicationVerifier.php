@@ -125,16 +125,16 @@ class ReplicationVerifier
         string $sourceJail,
         string $replicaJail,
         bool $skipTest = false
-    ): void {
+    ): ?string {
         // Respect dry-run or skip flags
         if ($this->dryRun) {
             echo "🔇 [DRY-RUN] Skipping replication setup and verification.\n";
-            return;
+            return null;
         }
 
         if ($skipTest) {
             echo "⚠️ [SKIP] Replication test skipped due to --skip-test flag.\n";
-            return;
+            return null;
         }
 
         echo "⚙️ [STEP] Checking replication status...\n";
@@ -150,10 +150,10 @@ class ReplicationVerifier
             $replicaJail,
             $cmd,
             "Verify replication row in replica jail"
-        );
-
-        echo $check;        
+        );               
 
         echo "\n✅ End-to-end replication test passed.\n";
+
+        return $check;
     }
 }
