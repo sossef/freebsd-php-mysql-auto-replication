@@ -174,7 +174,7 @@ class Logger
      */
     public function logInfo(string $message): void
     {
-        $this->log("💡[INFO] {$message}\n");
+        $this->log("💡 [INFO] {$message}\n");
     }
 
     /**

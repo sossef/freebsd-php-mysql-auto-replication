@@ -105,7 +105,7 @@ class ZfsSnapshotManager
 
         // Dry-run mode: skip real MySQL interaction
         if ($this->shell->isDryRun()) {
-            $this->logDryRun("Skipping remote MySQL query parsing\n");
+            $this->logDryRun("Skipping remote MySQL query parsing");
             $logFile = 'mysql-bin.000001';
             $logPos = 1234;
         } else {

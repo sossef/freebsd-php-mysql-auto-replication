@@ -79,7 +79,7 @@ class MySqlConfigurator
 
         // Modify config contents (only in non-dry-run mode)
         if ($this->shell->isDryRun()) {
-            $this->logDryRun("Skipping file read/write for {$mycnfPath}\n");
+            $this->logDryRun("Skipping file read/write for {$mycnfPath}");
         } else {
             $content = file_get_contents($mycnfPath);
 
