@@ -144,6 +144,7 @@ class ReplicationVerifier
             SHOW REPLICA STATUS\G;
         SQL;
 
+        $mysqlBinPath = Config::get('MYSQL_BIN_PATH');
         $cmd = "{$mysqlBinPath} -e '{$replicaStatusQuery}'";
         $check = $this->jail->exec(
             $replicaJail,
