@@ -2,6 +2,7 @@
 
 namespace Monsefrachid\MysqlReplication\Support;
 
+use Monsefrachid\MysqlReplication\Support\LoggerTrait;
 use RuntimeException;
 
 /**
@@ -12,6 +13,9 @@ use RuntimeException;
  */
 class ShellRunner
 {
+    // Inject logging helpers from LoggerTrait
+    use LoggerTrait;
+
     /**
      * Whether to simulate command execution without actually running them.
      *
@@ -42,17 +46,17 @@ class ShellRunner
      */
     public function run(string $cmd, ?string $desc = null, ?string $onError = null): array
     {
-        // Print the step description if provided
+        // Log the step description if provided
         if ($desc) {
-            echo "\n⚙️ [STEP] {$desc} \n";
+            $this->logStep($desc);
         }
 
-        // Print the actual shell command being run
-        echo "➡️ [CMD] {$cmd}\n";
+        // Log the actual shell command being run        
+        $this->logCmd($cmd);
 
         // If dry-run mode is enabled, skip execution and return simulated output
         if ($this->dryRun) {
-            echo "🔇 [DRY-RUN] Skipping execution.\n";
+            $this->logDryRun("Skipping exec: {$cmd}\n");
             return ["[DRY-RUN] Command not executed."];
         }
 
@@ -62,6 +66,7 @@ class ShellRunner
         // If the command failed (non-zero exit), throw an exception with a helpful message
         if ($exitCode !== 0) {
             $message = $onError ?: "Command failed: {$cmd}";
+            $this->logError($message);
             throw new RuntimeException("❌ [ERROR] {$message}");
         }
 
@@ -79,17 +84,17 @@ class ShellRunner
      */
     public function shell(string $cmd, ?string $desc = null): ?string
     {
-        // Print the step description if provided
+        // Log the step description if provided
         if ($desc) {
-            echo "\n⚙️ [STEP] {$desc} \n";
+            $this->logStep($desc);
         }
 
-        // Print the shell command being executed
-        echo "➡️ [CMD] {$cmd}\n";
+        // Log the shell command being executed
+        $this->logCmd($cmd);
 
         // If dry-run mode is enabled, skip actual execution and return a placeholder message
         if ($this->dryRun) {
-            echo "🔇 [DRY-RUN] Skipping shell_exec: {$cmd}\n";
+            $this->logDryRun("Skipping shell_exec: {$cmd}\n");
             return "[DRY-RUN] (shell)";
         }
 

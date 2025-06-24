@@ -23,6 +23,7 @@ use Monsefrachid\MysqlReplication\Services\ReplicationVerifier;
  */
 abstract class ReplicatorBase
 {
+    // Inject logging helpers from LoggerTrait
     use LoggerTrait;
 
     /**
@@ -259,8 +260,8 @@ abstract class ReplicatorBase
         // Step 1: Create or retrieve snapshot from source jail
         $snapshotName = $this->prepareSnapshot();
 
+        // Rename log file using snapshot name
         $this->renameLogFile($snapshotName);
-        $this->logStep("Snapshot created: $snapshotName");
 
         // Step 2: Ensure the replica jail's root directory is in place
         $this->jails->assertRootExists($this->replicaJail);
@@ -290,7 +291,7 @@ abstract class ReplicatorBase
         );
 
         // Final confirmation
-        echo "\n✅ Replica setup complete and replication initialized.\n\n";
+        $this->logSuccess("Replica setup complete and replication initialized.\n\n");
     }
 
     /**
