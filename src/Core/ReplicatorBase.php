@@ -240,8 +240,7 @@ abstract class ReplicatorBase
         $msg .= 'Flags: force=' . ($this->force ? 'true' : 'false') .
             ', dryRun=' . ($this->dryRun ? 'true' : 'false') .
             ', skipTest=' . ($this->skipTest ? 'true' : 'false') . "\n";
-            
-        echo $msg;
+        
         $this->log($msg);
 
         // Check if the target replica jail already exists
