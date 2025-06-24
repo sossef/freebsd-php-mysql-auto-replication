@@ -59,7 +59,7 @@ class JailConfigurator
         $config['defaultrouter'] = '10.0.0.1';
         $config['host_hostname'] = str_replace('_', '-', $jailName);
         $config['host_hostuuid'] = $jailName;
-        $config['jail_zfs_dataset'] = "iocage/jails/{$jailName}/data";
+        $config['jail_zfs_dataset'] = $this->jailDriver->getJailZfsDatasetPath() . "/{$jailName}/data";
         $config['allow_raw_sockets'] = 1;
         $config['release'] = '14.3-RELEASE';
 

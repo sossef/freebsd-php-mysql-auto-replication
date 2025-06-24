@@ -70,4 +70,5 @@ interface JailDriverInterface
     public function getSnapshotBackupDir(): string;
     public function getJailsDatasetPath(): string;
     public function getJailsMountPath(): string;
+    public function getJailZfsDatasetPath(): string;
 }

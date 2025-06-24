@@ -195,4 +195,9 @@ EOD;
     {
         return \Config::get('IOCAGE_JAILS_DATASET_PATH');
     }
+
+    public function getJailZfsDatasetPath(): string
+    {
+        return \Config::get('IOCAGE_JAIL_ZFS_DATASET_PATH');
+    }
 }
