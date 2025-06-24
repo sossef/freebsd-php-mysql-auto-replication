@@ -77,66 +77,68 @@ class MySqlConfigurator
         $replicaRoot = $this->jailDriver->getJailsMountPath() . "/{$replicaJail}/root";
         $mycnfPath = "{$replicaRoot}/usr/local/etc/mysql/my.cnf";
 
-        // Modify config contents (only in non-dry-run mode)
+        $this->updateMyCnf($mycnfPath);
+        $this->restartMySQLWithNewUUID($replicaJail);
+        $this->injectReplicationSQL($replicaJail, $snapshotName, $meta);
+    }
+
+    private function updateMyCnf(string $mycnfPath): void
+    {
         if ($this->shell->isDryRun()) {
-            $this->logDryRun("Skipping file read/write for {$mycnfPath}");
-        } else {
-            $content = file_get_contents($mycnfPath);
-
-            if ($content === false) {
-                throw new RuntimeException("Failed to read my.cnf at {$mycnfPath}");
-            }
-
-            // Ensure [mysqld] section exists
-            if (!preg_match('/^\[mysqld\]/m', $content)) {
-                $content = "[mysqld]\n" . $content;
-            }
-
-            // Set or replace the server-id
-            if (preg_match('/server-id\s*=\s*\d+/i', $content)) {
-                $content = preg_replace('/server-id\s*=\s*\d+/i', 'server-id=' . $this->generateServerId(), $content);
-            } else {
-                $content .= "\nserver-id=" . $this->generateServerId();
-            }
-
-            // Set SSL cert and key paths
-            $content = preg_replace('/ssl-cert\s*=.*/i', "ssl-cert={$this->dbSslPath}/client-cert.pem", $content);
-            $content = preg_replace('/ssl-key\s*=.*/i', "ssl-key={$this->dbSslPath}/client-key.pem", $content);
-
-            // Add relay-log if missing
-            if (!preg_match('/relay-log\s*=/i', $content)) {
-                $content .= "\nrelay-log=relay-log";
-            }
-
-            // Write the updated configuration back to disk
-            file_put_contents($mycnfPath, $content);
+            $this->logDry("Skipping file read/write for {$mycnfPath}");
+            return;
         }
 
-        // Stop MySQL service to apply changes and regenerate UUID
+        $content = file_get_contents($mycnfPath);
+        if ($content === false) {
+            throw new RuntimeException("Failed to read my.cnf at {$mycnfPath}");
+        }
+
+        // Ensure [mysqld] section exists
+        if (!preg_match('/^\[mysqld\]/m', $content)) {
+            $content = "[mysqld]\n" . $content;
+        }
+
+        // Set or replace the server-id
+        if (preg_match('/server-id\s*=\s*\d+/i', $content)) {
+            $content = preg_replace('/server-id\s*=\s*\d+/i', 'server-id=' . $this->generateServerId(), $content);
+        } else {
+            $content .= "\nserver-id=" . $this->generateServerId();
+        }
+
+        // Set SSL cert and key paths
+        $content = preg_replace('/ssl-cert\s*=.*/i', "ssl-cert={$this->dbSslPath}/client-cert.pem", $content);
+        $content = preg_replace('/ssl-key\s*=.*/i', "ssl-key={$this->dbSslPath}/client-key.pem", $content);
+
+        // Add relay-log if missing
+        if (!preg_match('/relay-log\s*=/i', $content)) {
+            $content .= "\nrelay-log=relay-log";
+        }
+
+        file_put_contents($mycnfPath, $content);
+    }
+
+    private function restartMySQLWithNewUUID(string $replicaJail): void
+    {
         $this->jailDriver->runService(
-            $replicaJail, 
-            'mysql-server', 
-            'stop', 
+            $replicaJail,
+            'mysql-server',
+            'stop',
             'Stop MySQL in replica jail'
         );
 
-        // Remove auto.cnf to regenerate server UUID (important for replication)
         $this->jailDriver->exec(
-            $replicaJail, 
-            'rm -f /var/db/mysql/auto.cnf', 
+            $replicaJail,
+            'rm -f /var/db/mysql/auto.cnf',
             'Delete auto.cnf to regenerate server UUID'
         );
 
-        // Start MySQL service again
         $this->jailDriver->runService(
-            $replicaJail, 
-            'mysql-server', 
-            'start', 
+            $replicaJail,
+            'mysql-server',
+            'start',
             'Start MySQL in replica jail'
         );
-
-         // Inject CHANGE MASTER TO ... SQL to configure replica replication
-        $this->injectReplicationSQL($replicaJail, $snapshotName, $meta);
     }
 
     /**
