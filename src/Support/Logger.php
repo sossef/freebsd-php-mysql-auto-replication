@@ -102,7 +102,7 @@ class Logger
         }
     }
 
-    public function getLogFilePath()
+    public function getLogFilePath(): string
     {
         return $this->logFilePath;
     }

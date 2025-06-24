@@ -12,6 +12,11 @@ namespace Monsefrachid\MysqlReplication\Support;
  */
 trait LoggerTrait
 {
+    public function getLogFilePath()
+    {
+        return Logger::get()->getLogFilePath();
+    }
+
     /**
      * Log a plain message to both console and file.
      *
