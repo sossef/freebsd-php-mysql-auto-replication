@@ -66,17 +66,23 @@ class ZfsSnapshotManager
         $metaFile = "{$remoteBackupDir}/{$snapshotName}.meta";
         $mysqlBinPath = \Config::get('MYSQL_BIN_PATH');
 
-        // Step 1: Capture master status
-        // $cmdMasterStatus = "ssh -i {$this->sshKey} {$remote} \"sudo iocage exec {$jailName} {$mysqlBinPath} -N -e 'SHOW MASTER STATUS'\"";
-        // $output = $this->shell->shell($cmdMasterStatus, "Fetch MySQL master status on {$jailName}");
-        $output = $this->jail->execMySQLRemote($remote, $this->sshKey, $jailName, 'SHOW MASTER STATUS');
-        $lines = explode("\n", trim($output));
+        if ($this->shell->isDryRun()) {
+            echo "🔇 [DRY-RUN] Skipping remote MySQL query parsing\n";
+            $logFile = 'mysql-bin.000001';
+            $logPos = 1234;
+        } else {
+            // Step 1: Capture master status
+            // $cmdMasterStatus = "ssh -i {$this->sshKey} {$remote} \"sudo iocage exec {$jailName} {$mysqlBinPath} -N -e 'SHOW MASTER STATUS'\"";
+            // $output = $this->shell->shell($cmdMasterStatus, "Fetch MySQL master status on {$jailName}");
+            $output = $this->jail->execMySQLRemote($remote, $this->sshKey, $jailName, 'SHOW MASTER STATUS');
+            $lines = explode("\n", trim($output));
 
-        if (count($lines) < 1 || !str_contains($lines[0], "\t")) {
-            throw new \RuntimeException("Unexpected output when fetching master status:\n{$output}");
-        }
+            if (count($lines) < 1 || !str_contains($lines[0], "\t")) {
+                throw new \RuntimeException("Unexpected output when fetching master status:\n{$output}");
+            }
 
-        [$logFile, $logPos] = explode("\t", $lines[0]);
+            [$logFile, $logPos] = explode("\t", $lines[0]);
+        }        
 
         // Step 2: Create snapshot
         $this->shell->run(
