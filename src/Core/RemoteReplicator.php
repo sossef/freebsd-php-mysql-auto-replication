@@ -58,6 +58,6 @@ class RemoteReplicator extends ReplicatorBase
      */
     protected function transferCertificates(): void
     {
-        $this->certs->transferCerts($this->from, $this->sourceJail, $this->replicaJail);
+        $this->certsManager->transferCerts($this->from, $this->sourceJail, $this->replicaJail);
     }
 }

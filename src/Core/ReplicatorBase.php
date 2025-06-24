@@ -123,14 +123,14 @@ abstract class ReplicatorBase
      *
      * @var CertManager
      */
-    protected CertManager $certs;
+    protected CertManager $certsManager;
 
     /**
      * Configures my.cnf and restarts MySQL in the replica jail.
      *
      * @var MySqlConfigurator
      */
-    protected MySqlConfigurator $mysql;
+    protected MySqlConfigurator $mySqlConfigurator;
 
     /**
      * Handles replication SQL injection and verification.
@@ -191,7 +191,7 @@ abstract class ReplicatorBase
         );
 
         // Initialize certificate manager, responsible for transferring and placing SSL files
-        $this->certs = new CertManager(
+        $this->certsManager = new CertManager(
             $this->shell, 
             $this->jailDriver,
             $this->sshKey

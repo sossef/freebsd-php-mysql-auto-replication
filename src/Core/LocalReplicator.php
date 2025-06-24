@@ -42,6 +42,6 @@ class LocalReplicator extends ReplicatorBase
      */
     protected function transferCertificates(): void
     {
-        $this->certs->transferCertsFromLocal($this->replicaJail);
+        $this->certsManager->transferCertsFromLocal($this->replicaJail);
     }
 }
