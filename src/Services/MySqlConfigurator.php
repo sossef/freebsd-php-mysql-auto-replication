@@ -103,7 +103,7 @@ class MySqlConfigurator
         //     "Delete auto.cnf to regenerate server UUID"
         // );
 
-        $this->jail->exec($replicaJail, 'rm -f /var/db/mysql/auto.cnf'. 'Delete auto.cnf to regenerate server UUID');
+        $this->jail->exec($replicaJail, 'rm -f /var/db/mysql/auto.cnf', 'Delete auto.cnf to regenerate server UUID');
 
         // $this->shell->run(
         //     "sudo iocage exec {$replicaJail} service mysql-server start",
