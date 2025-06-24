@@ -70,6 +70,14 @@ abstract class ReplicatorBase
      */
     protected bool $skipTest;
 
+    /**
+     * Metadata about the current replication snapshot.
+     *
+     * Holds information such as snapshot name, binlog file, and position,
+     * used during MySQL replication setup. May be null if not yet initialized.
+     *
+     * @var MetaInfo|null
+     */
     protected ?MetaInfo $meta = null;
 
     /**
@@ -93,6 +101,14 @@ abstract class ReplicatorBase
      */
     protected JailManager $jails;
 
+    /**
+     * Driver responsible for interacting with iocage jails.
+     *
+     * Abstracts jail operations such as execution, service control,
+     * and file manipulation across both local and remote contexts.
+     *
+     * @var JailDriverInterface
+     */
     protected JailDriverInterface $jailDriver;
 
     /**
@@ -159,8 +175,8 @@ abstract class ReplicatorBase
 
         $this->zfs = new ZfsSnapshotManager(
             $this->shell, 
-            $this->sshKey, 
-            $this->jailDriver
+            $this->jailDriver,
+            $this->sshKey            
         );
 
         $this->jails = new JailManager(
@@ -174,14 +190,14 @@ abstract class ReplicatorBase
 
         $this->certs = new CertManager(
             $this->shell, 
-            $this->sshKey, 
-            $this->jailDriver
+            $this->jailDriver,
+            $this->sshKey            
         );
 
         $this->mysql = new MySqlConfigurator(
             $this->shell, 
-            $this->sshKey, 
-            $this->jailDriver
+            $this->jailDriver,
+            $this->sshKey            
         );
 
         $this->verifier = new ReplicationVerifier(
@@ -192,8 +208,25 @@ abstract class ReplicatorBase
         );
     }
 
+    /**
+     * Prepare and return the name of the ZFS snapshot to be used for replication.
+     *
+     * This method must be implemented by concrete subclasses to define how
+     * the snapshot is created or retrieved (e.g., from a local source or over SSH).
+     *
+     * @return string The name of the prepared snapshot.
+     */
     abstract protected function prepareSnapshot(): string;
 
+    /**
+     * Transfer SSL certificates required for MySQL replication.
+     *
+     * This method must be implemented by subclasses to handle the transfer
+     * of CA, client certificate, and key files from the source environment
+     * (local or remote) into the replica jail.
+     *
+     * @return void
+     */
     abstract protected function transferCertificates(): void;
 
     /**
@@ -251,6 +284,18 @@ abstract class ReplicatorBase
         echo "\n✅ Replica setup complete and replication initialized.\n\n";
     }
 
+    /**
+     * Load MySQL replication metadata from a snapshot-specific `.meta` file.
+     *
+     * This metadata includes the binlog file name, position, master host, and source jail name,
+     * and is required to properly configure the replica during setup.
+     *
+     * @param string $snapshotName The name of the snapshot whose metadata file should be loaded.
+     *
+     * @return void
+     *
+     * @throws \RuntimeException If the metadata file is missing or has insufficient data.
+     */
     protected function loadMetaData(string $snapshotName): void
     {
         //$snapshotBackupPath = \Config::get('IOCAGE_SNAPSHOT_BACKUP_DIR');

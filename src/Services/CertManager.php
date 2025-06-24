@@ -28,7 +28,11 @@ class CertManager
      * @param ShellRunner $shell
      * @param string $sshKey
      */
-    public function __construct(ShellRunner $shell, string $sshKey, protected JailDriverInterface $jailDriver)
+    public function __construct(
+        ShellRunner $shell, 
+        protected JailDriverInterface $jailDriver, 
+        string $sshKey
+    )
     {
         $this->shell = $shell;
         $this->sshKey = $sshKey;

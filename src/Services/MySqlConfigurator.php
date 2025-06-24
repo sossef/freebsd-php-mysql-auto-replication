@@ -34,8 +34,8 @@ class MySqlConfigurator
      */
     public function __construct(
         ShellRunner $shell, 
-        string $sshKey,
-        protected JailDriverInterface $jailDriver
+        protected JailDriverInterface $jailDriver,
+        string $sshKey        
     )
     {
         $this->shell = $shell;

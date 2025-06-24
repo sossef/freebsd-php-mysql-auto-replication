@@ -47,6 +47,15 @@ class RemoteReplicator extends ReplicatorBase
         return $snapshot;
     }
 
+    /**
+     * Transfer SSL certificates from the source jail (remote or local) to the replica jail.
+     *
+     * Uses the CertManager to securely copy necessary certificate files (CA, client cert, key)
+     * from the source jail (identified by host and name) into the replica jail,
+     * ensuring proper setup for SSL-based MySQL replication.
+     *
+     * @return void
+     */
     protected function transferCertificates(): void
     {
         $this->certs->transferCerts($this->from, $this->sourceJail, $this->replicaJail);

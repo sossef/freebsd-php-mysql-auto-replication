@@ -32,6 +32,14 @@ class LocalReplicator extends ReplicatorBase
         return $snapshot;
     }
 
+    /**
+     * Transfer SSL certificates from the local system into the replica jail.
+     *
+     * This method delegates to the CertManager to handle the actual file transfer
+     * for required certificate files (e.g., CA, client cert, and key) needed for MySQL SSL replication.
+     *
+     * @return void
+     */
     protected function transferCertificates(): void
     {
         $this->certs->transferCertsFromLocal($this->replicaJail);
