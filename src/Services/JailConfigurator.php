@@ -3,6 +3,7 @@
 namespace Monsefrachid\MysqlReplication\Services;
 
 use Monsefrachid\MysqlReplication\Support\ShellRunner;
+use Monsefrachid\MysqlReplication\Support\LoggerTrait;
 use Monsefrachid\MysqlReplication\Contracts\JailDriverInterface;
 use RuntimeException;
 
@@ -13,6 +14,8 @@ use RuntimeException;
  */
 class JailConfigurator
 {
+    use LoggerTrait;
+    
     /**
      * @var ShellRunner
      */
@@ -49,7 +52,7 @@ class JailConfigurator
 
         // Skip actual modifications if dry-run is enabled
         if ($this->shell->isDryRun()) {
-            echo "🔇 [DRY-RUN] Skipping jail config update: {$configPath}\n";
+            $this->logDryRun("Skipping jail config update: {$configPath}");
             return;
         }
 

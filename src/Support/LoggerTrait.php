@@ -47,6 +47,11 @@ trait LoggerTrait
         Logger::get()->logWarning($message);
     }
 
+    public function logInfo(string $message): void
+    {
+        Logger::get()->logInfo($message);
+    }
+
     /**
      * Logs a success message.
      *
@@ -72,9 +77,9 @@ trait LoggerTrait
      *
      * @param string $message
      */
-    protected function logDry(string $message): void
+    protected function logDryRun(string $message): void
     {
-        Logger::get()->logDry($message);
+        Logger::get()->logDryRun($message);
     }
 
     /**

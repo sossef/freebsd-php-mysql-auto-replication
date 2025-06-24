@@ -4,6 +4,7 @@ namespace Monsefrachid\MysqlReplication\Services;
 
 use Monsefrachid\MysqlReplication\Support\ShellRunner;
 use Monsefrachid\MysqlReplication\Support\Config;
+use Monsefrachid\MysqlReplication\Support\LoggerTrait;
 use Monsefrachid\MysqlReplication\Contracts\JailDriverInterface;
 use RuntimeException;
 
@@ -17,6 +18,8 @@ use RuntimeException;
  */
 class ZfsSnapshotManager
 {
+    use LoggerTrait;
+    
     /**
      * Executes shell commands with optional dry-run support.
      *
@@ -102,7 +105,7 @@ class ZfsSnapshotManager
 
         // Dry-run mode: skip real MySQL interaction
         if ($this->shell->isDryRun()) {
-            echo "🔇 [DRY-RUN] Skipping remote MySQL query parsing\n";
+            $this->logDryRun("Skipping remote MySQL query parsing\n");
             $logFile = 'mysql-bin.000001';
             $logPos = 1234;
         } else {
@@ -246,7 +249,7 @@ class ZfsSnapshotManager
             "Verify snapshot and metadata files exist on remote"
         );
 
-        echo "✅ Remote snapshot and metadata verified for '{$snapshotName}'\n";
+        $this->logSuccess("Remote snapshot and metadata verified for '{$snapshotName}'");
     }
 
     /**
@@ -270,7 +273,7 @@ class ZfsSnapshotManager
             throw new RuntimeException("❌ Local snapshot verification failed: missing .zfs or .meta for '{$snapshotName}'");
         }
         
-        echo "✅ Local snapshot and metadata verified for '{$snapshotName}'\n";
+        $this->logSuccess("Local snapshot and metadata verified for '{$snapshotName}'");
     }
 
     // Deprecated but preserved for fallback/alternate use

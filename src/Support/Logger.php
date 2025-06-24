@@ -168,6 +168,16 @@ class Logger
     }
 
     /**
+     * Logs info message.
+     *
+     * @param string $message
+     */
+    public function logInfo(string $message): void
+    {
+        $this->log("💡[INFO] {$message}\n");
+    }
+
+    /**
      * Logs an error message.
      *
      * @param string $message
@@ -182,7 +192,7 @@ class Logger
      *
      * @param string $message
      */
-    public function logDry(string $message): void
+    public function logDryRun(string $message): void
     {
         $this->log("🔇 [DRY-RUN] {$message}\n");
     }

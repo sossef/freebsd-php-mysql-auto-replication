@@ -56,7 +56,7 @@ class ShellRunner
 
         // If dry-run mode is enabled, skip execution and return simulated output
         if ($this->dryRun) {
-            $this->logDryRun("Skipping exec: {$cmd}\n");
+            $this->logDryRun("Skipping exec: {$cmd}");
             return ["[DRY-RUN] Command not executed."];
         }
 
@@ -94,7 +94,7 @@ class ShellRunner
 
         // If dry-run mode is enabled, skip actual execution and return a placeholder message
         if ($this->dryRun) {
-            $this->logDryRun("Skipping shell_exec: {$cmd}\n");
+            $this->logDryRun("Skipping shell_exec: {$cmd}");
             return "[DRY-RUN] (shell)";
         }
 

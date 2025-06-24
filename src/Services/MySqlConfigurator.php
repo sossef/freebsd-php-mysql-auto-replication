@@ -5,6 +5,7 @@ namespace Monsefrachid\MysqlReplication\Services;
 use Monsefrachid\MysqlReplication\Support\ShellRunner;
 use Monsefrachid\MysqlReplication\Support\Config;
 use Monsefrachid\MysqlReplication\Support\MetaInfo;
+use Monsefrachid\MysqlReplication\Support\LoggerTrait;
 use Monsefrachid\MysqlReplication\Contracts\JailDriverInterface;
 use RuntimeException;
 
@@ -15,6 +16,8 @@ use RuntimeException;
  */
 class MySqlConfigurator
 {
+    use LoggerTrait;
+    
     /**
      * @var ShellRunner
      */
@@ -76,7 +79,7 @@ class MySqlConfigurator
 
         // Modify config contents (only in non-dry-run mode)
         if ($this->shell->isDryRun()) {
-            echo "🔇 [DRY-RUN] Skipping file read/write for {$mycnfPath}\n";
+            $this->logDryRun("Skipping file read/write for {$mycnfPath}\n");
         } else {
             $content = file_get_contents($mycnfPath);
 

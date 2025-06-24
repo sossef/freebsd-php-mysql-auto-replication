@@ -246,12 +246,12 @@ abstract class ReplicatorBase
         if ($this->jails->exists($this->replicaJail)) {
             if ($this->force) {
                 // If --force flag is set, destroy the existing jail to proceed
-                $this->logWarning("[FORCE] Jail '{$this->replicaJail}' already exists. Destroying...\n");
+                $this->logWarning("[FORCE] Jail '{$this->replicaJail}' already exists. Destroying...");
 
                 $this->jails->destroy($this->replicaJail);
             } else {
                 // Otherwise, halt execution to avoid accidental overwrite
-                $this->logError("Jail '{$this->replicaJail}' already exists. Use --force to overwrite.\n");
+                $this->logError("Jail '{$this->replicaJail}' already exists. Use --force to overwrite.");
 
                 exit(1);
             }
@@ -291,7 +291,7 @@ abstract class ReplicatorBase
         );
 
         // Final confirmation
-        $this->logSuccess("Replica setup complete and replication initialized.\n\n");
+        $this->logSuccess("Replica setup complete and replication initialized.");
     }
 
     /**
@@ -340,7 +340,7 @@ abstract class ReplicatorBase
         $this->meta = new MetaInfo($masterLogFile, $masterLogPos, $masterHost, $masterJailName);
 
         // Output debug info to console for visibility
-        echo "🔢 Binlog: {$this->meta->masterLogFile}, Position: {$this->meta->masterLogPos}, Host: {$this->meta->masterHost}, Jail: {$this->meta->masterJailName}\n";
+        $this->logInfo("Binlog: {$this->meta->masterLogFile}, Position: {$this->meta->masterLogPos}, Host: {$this->meta->masterHost}, Jail: {$this->meta->masterJailName}");
     }
 
     /**

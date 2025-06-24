@@ -4,6 +4,7 @@ namespace Monsefrachid\MysqlReplication\Services;
 
 use Monsefrachid\MysqlReplication\Support\ShellRunner;
 use Monsefrachid\MysqlReplication\Support\Config;
+use Monsefrachid\MysqlReplication\Support\LoggerTrait;
 use Monsefrachid\MysqlReplication\Contracts\JailDriverInterface;
 use RuntimeException;
 
@@ -14,6 +15,8 @@ use RuntimeException;
  */
 class IocageJailDriver implements JailDriverInterface
 {
+    use LoggerTrait;
+
     /**
      * @var ShellRunner
      */
@@ -92,11 +95,12 @@ class IocageJailDriver implements JailDriverInterface
 
         // 🛡 Skip check if dry-run is enabled
         if ($this->shell->isDryRun()) {
-            echo "🔇 [DRY-RUN] Skipping jail root existence check: {$rootPath}\n";
+            $this->logDryRun("Skipping jail root existence check: {$rootPath}");
             return;
         }
 
         if (!is_dir($rootPath)) {
+            $this->logError("Jail root '{$rootPath}' does not exist after snapshot transfer.");
             throw new RuntimeException("❌ Jail root '{$rootPath}' does not exist after snapshot transfer.");
         }
     }
