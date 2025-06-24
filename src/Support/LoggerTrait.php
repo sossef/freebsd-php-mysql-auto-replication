@@ -22,9 +22,9 @@ trait LoggerTrait
      *
      * @param string $message
      */
-    protected function log(string $message): void
+    protected function log(string $message, $toConsole = true): void
     {
-        Logger::get()->log($message);
+        Logger::get()->log($message, $toConsole);
     }
 
     /**

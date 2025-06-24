@@ -120,9 +120,6 @@ class ReplicationVerifier
     }
 
     public function verifyReplicaStatus(
-        string $masterHost,
-        string $masterJailName,
-        string $sourceJail,
         string $replicaJail,
         bool $skipTest = false
     ): ?string {
@@ -150,10 +147,42 @@ class ReplicationVerifier
             $replicaJail,
             $cmd,
             "Verify replication row in replica jail"
-        );               
+        );      
+        
+        $status = $this->parseReplicaStatus($check);
 
-        echo "\n✅ End-to-end replication test passed.\n";
+        $ioRunning = $status['Replica_IO_Running'] ?? 'Unknown';
+        $sqlRunning = $status['Replica_SQL_Running'] ?? 'Unknown';
+        $sslAllowed = $status['Source_SSL_Allowed'] ?? 'Unknown';
 
-        return $check;
+        $this->log("🔍 Replica_IO_Running: $ioRunning\n");
+        $this->log("🔍 Replica_SQL_Running: $sqlRunning\n");
+        $this->log("🔍 Source_SSL_Allowed: $sslAllowed\n");
+
+        if ($ioRunning !== 'Yes' || $sqlRunning !== 'Yes' || $sslAllowed !== 'Yes') {
+            $this->logError("Replica status check failed!\n\n");
+            return [false, $check];
+        } 
+        
+        $this->logSuccess("Replica status check passed.\n\n");
+
+        return [true, $check];
     }
+
+    private function parseReplicaStatus(string $output): array
+    {
+        $result = [];
+
+        foreach (explode("\n", $output) as $line) {
+            // Match lines like: "Replica_IO_Running: Yes"
+            if (preg_match('/^\s*([\w_]+):\s*(.*)$/', $line, $matches)) {
+                $key = $matches[1];
+                $value = trim($matches[2]);
+                $result[$key] = $value;
+            }
+        }
+
+        return $result;
+    }
+
 }

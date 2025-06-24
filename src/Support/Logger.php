@@ -131,10 +131,10 @@ class Logger
      *
      * @param string $message
      */
-    public function log(string $message): void
+    public function log(string $message, $toConsole = true): void
     {
         $this->write($message);
-        echo $message;
+        if ($toConsole) echo $message;
     }
 
     /**

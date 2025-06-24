@@ -282,7 +282,7 @@ abstract class ReplicatorBase
         );
 
         // Step 6: Test replication health and correctness
-        $replicaStatus = $this->replicationVerifier->verifyReplicaStatus(
+        [$checkPassed, $replicaStatus] = $this->replicationVerifier->verifyReplicaStatus(
             $this->meta->masterHost,
             $this->meta->masterJailName,
             $this->sourceJail,
@@ -290,14 +290,14 @@ abstract class ReplicatorBase
             $this->skipTest
         );
 
-        if ($replicaStatus) {
-            // Final confirmation
-            $this->logSuccess("Replica setup complete and replication initialized. See report in " . $this->getLogFilePath());
-            $this->log("\n\n{$replicaStatus}\n\n");        
+        if ($checkPassed) {            
+            $this->logSuccess("Replica setup complete and replication initialized. See report in logs/" . $this->getLogFileName());                   
+        } else {
+            $this->logError("Replica setup complete but replica status check failed.");
         }
 
-        //$this->logError("Replica setup complete but replica status failed.");
-        
+        $this->log("\nSee report in logs/" . $this->getLogFileName());
+        $this->log("\n\n{$replicaStatus}\n\n", false);         
     }
 
     /**
