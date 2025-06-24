@@ -7,6 +7,7 @@ use Monsefrachid\MysqlReplication\Support\MetaInfo;
 use Monsefrachid\MysqlReplication\Services\ZfsSnapshotManager;
 use Monsefrachid\MysqlReplication\Services\JailManager;
 use Monsefrachid\MysqlReplication\Contracts\JailDriverInterface;
+use Monsefrachid\MysqlReplication\Services\IocageJailDriver;
 use Monsefrachid\MysqlReplication\Services\JailConfigurator;
 use Monsefrachid\MysqlReplication\Services\CertManager;
 use Monsefrachid\MysqlReplication\Services\MySqlConfigurator;
