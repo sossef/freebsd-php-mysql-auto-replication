@@ -230,6 +230,10 @@ abstract class ReplicatorBase
      */
     public function run(): void
     {
+
+        Logger::load(__DIR__ . '/../../logs'); // default name: replication
+        Logger::get()->logStep("Starting replication...");
+
         // Display replication source/target and runtime flags
         echo "\n🛠️ Running replication from '{$this->from}:{$this->sourceJail}' to '{$this->replicaJail}'\n\n";
         echo 'Flags: force=' . ($this->force ? 'true' : 'false') .
@@ -251,6 +255,9 @@ abstract class ReplicatorBase
 
         // Step 1: Create or retrieve snapshot from source jail
         $snapshotName = $this->prepareSnapshot();
+
+        Logger::get()->renameLogFile($snapshotName);
+        Logger::get()->logStep("Snapshot created: $snapshotName");
 
         Logger::load(__DIR__ . '/../../logs', $snapshotName);
         Logger::get()->logStep("Snapshot ready: $snapshotName");

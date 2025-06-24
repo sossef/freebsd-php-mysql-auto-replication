@@ -44,15 +44,25 @@ class Logger
     }
 
     /**
-     * Initializes the logger.
+     * Initializes the singleton Logger instance.
      *
-     * @param string $directory     Where to store the log file.
-     * @param string $snapshotName  Used to form the log file name.
+     * This should be called once per process (typically in your entry script or
+     * at the start of ReplicatorBase::run). If the snapshot name is not yet known,
+     * a temporary default name like "replication" will be used. The file can later
+     * be renamed using Logger::renameLogFile().
+     *
+     * @param string      $directory  The directory where the log file should be stored.
+     * @param string|null $name       Optional name for the log file (e.g., snapshot name).
      */
-    public static function load(string $directory, string $snapshotName): void
+    public static function load(string $directory, ?string $name = null): void
     {
+        // Only initialize once — subsequent calls are ignored
         if (self::$instance === null) {
-            self::$instance = new self($directory, $snapshotName);
+            // Use default name if none provided
+            $name = $name ?? 'replication';
+
+            // Create the singleton instance
+            self::$instance = new self($directory, $name);
         }
     }
 
@@ -68,6 +78,33 @@ class Logger
         }
 
         return self::$instance;
+    }
+
+    /**
+     * Renames the current log file using the final snapshot name.
+     *
+     * This method should be called after the actual snapshot name is known,
+     * typically right after prepareSnapshot(). It updates the filename to match
+     * the naming convention: {snapshotName}_{timestamp}.log.
+     *
+     * @param string $newName The final snapshot name to be used in the new filename.
+     */
+    public function renameLogFile(string $newName): void
+    {
+        // Generate a new timestamped filename using the provided snapshot name
+        $timestamp = date('Ymd_His');
+        $newFilename = "{$newName}_{$timestamp}.log";
+
+        // Determine the full path to the new log file
+        $newPath = dirname($this->logFilePath) . '/' . $newFilename;
+
+        // Rename the current file only if it exists
+        if (file_exists($this->logFilePath)) {
+            rename($this->logFilePath, $newPath);
+
+            // Update the internal file path so future writes go to the renamed file
+            $this->logFilePath = $newPath;
+        }
     }
 
     /**
