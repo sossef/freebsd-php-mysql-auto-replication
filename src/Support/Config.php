@@ -1,5 +1,7 @@
 <?php
 
+namespace Monsefrachid\MysqlReplication\Support;
+
 use Dotenv\Dotenv;
 
 class Config

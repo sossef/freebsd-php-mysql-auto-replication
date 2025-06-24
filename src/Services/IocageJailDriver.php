@@ -3,6 +3,7 @@
 namespace Monsefrachid\MysqlReplication\Services;
 
 use Monsefrachid\MysqlReplication\Support\ShellRunner;
+use Monsefrachid\MysqlReplication\Support\Config;
 use Monsefrachid\MysqlReplication\Contracts\JailDriverInterface;
 use RuntimeException;
 
@@ -126,7 +127,7 @@ class IocageJailDriver implements JailDriverInterface
         string $description = ''
     ): string
     {
-        $bin = \Config::get('MYSQL_BIN_PATH');
+        $bin = Config::get('MYSQL_BIN_PATH');
 
         $cmd = <<<EOD
 ssh -i {$sshKey} {$remoteHost} "sudo iocage exec {$jailName} {$bin} -N -e '{$query}'"
@@ -137,7 +138,7 @@ EOD;
 
     public function execMySqlRemoteMultiLine(string $remoteHost, string $sshKey, string $jailName, string $sqlContent, string $description = ''): string 
     {
-        $bin = \Config::get('MYSQL_BIN_PATH');
+        $bin = Config::get('MYSQL_BIN_PATH');
 
         $cmd = <<<EOD
 echo "{$sqlContent}" | ssh -i {$sshKey} {$remoteHost} "sudo iocage exec {$jailName} sh -c '{$bin}'"
@@ -192,7 +193,7 @@ EOD;
      */
     public function getJailRootPath(string $jailName): string
     {
-        return \Config::get('IOCAGE_JAILS_MOUNT_PATH') . "/{$jailName}/root";
+        return Config::get('IOCAGE_JAILS_MOUNT_PATH') . "/{$jailName}/root";
     }
 
      /**
@@ -200,7 +201,7 @@ EOD;
      */
     public function getJailConfigPath(string $jailName): string
     {
-        return \Config::get('IOCAGE_JAILS_MOUNT_PATH') . "/{$jailName}/config.json";
+        return Config::get('IOCAGE_JAILS_MOUNT_PATH') . "/{$jailName}/config.json";
     }
 
      /**
@@ -208,7 +209,7 @@ EOD;
      */
     public function getSnapshotBackupDir(): string
     {
-        return \Config::get('IOCAGE_SNAPSHOT_BACKUP_DIR');
+        return Config::get('IOCAGE_SNAPSHOT_BACKUP_DIR');
     }
 
      /**
@@ -216,7 +217,7 @@ EOD;
      */
     public function getJailsMountPath(): string
     {
-        return \Config::get('IOCAGE_JAILS_MOUNT_PATH');
+        return Config::get('IOCAGE_JAILS_MOUNT_PATH');
     }
 
      /**
@@ -224,7 +225,7 @@ EOD;
      */
     public function getJailsDatasetPath(): string
     {
-        return \Config::get('IOCAGE_JAILS_DATASET_PATH');
+        return Config::get('IOCAGE_JAILS_DATASET_PATH');
     }
 
      /**
@@ -232,6 +233,6 @@ EOD;
      */
     public function getJailZfsDatasetPath(): string
     {
-        return \Config::get('IOCAGE_JAIL_ZFS_DATASET_PATH');
+        return Config::get('IOCAGE_JAIL_ZFS_DATASET_PATH');
     }
 }

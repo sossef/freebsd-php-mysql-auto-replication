@@ -3,6 +3,7 @@
 namespace Monsefrachid\MysqlReplication\Services;
 
 use Monsefrachid\MysqlReplication\Support\ShellRunner;
+use Monsefrachid\MysqlReplication\Support\Config;
 use Monsefrachid\MysqlReplication\Contracts\JailDriverInterface;
 use RuntimeException;
 
@@ -82,7 +83,7 @@ class ReplicationVerifier
         SQL;
 
         // Send insert query to primary over SSH
-        $mysqlBinPath = \Config::get('MYSQL_BIN_PATH');
+        $mysqlBinPath = Config::get('MYSQL_BIN_PATH');
         $insertCmd = "echo \"$testInsert\" | ssh -i {$this->sshKey} {$masterHost} \"sudo iocage exec {$masterJailName} {$mysqlBinPath}\"";
         $this->shell->run($insertCmd, "Insert test row on primary");
 

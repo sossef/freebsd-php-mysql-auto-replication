@@ -3,6 +3,7 @@
 namespace Monsefrachid\MysqlReplication\Services;
 
 use Monsefrachid\MysqlReplication\Support\ShellRunner;
+use Monsefrachid\MysqlReplication\Support\Config;
 use Monsefrachid\MysqlReplication\Contracts\JailDriverInterface;
 use RuntimeException;
 
@@ -97,7 +98,7 @@ class ZfsSnapshotManager
         $zfsFile = "{$remoteBackupDir}/{$snapshotName}.zfs";
         $metaFile = "{$remoteBackupDir}/{$snapshotName}.meta";
 
-        $mysqlBinPath = \Config::get('MYSQL_BIN_PATH');
+        $mysqlBinPath = Config::get('MYSQL_BIN_PATH');
 
         // Dry-run mode: skip real MySQL interaction
         if ($this->shell->isDryRun()) {

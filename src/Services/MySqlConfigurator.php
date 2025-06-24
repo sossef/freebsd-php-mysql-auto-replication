@@ -3,6 +3,7 @@
 namespace Monsefrachid\MysqlReplication\Services;
 
 use Monsefrachid\MysqlReplication\Support\ShellRunner;
+use Monsefrachid\MysqlReplication\Support\Config;
 use Monsefrachid\MysqlReplication\Support\MetaInfo;
 use Monsefrachid\MysqlReplication\Contracts\JailDriverInterface;
 use RuntimeException;
@@ -47,7 +48,7 @@ class MySqlConfigurator
     {
         $this->shell = $shell;
         $this->sshKey = $sshKey;
-        $this->dbSslPath = \Config::get('DB_SSL_PATH');
+        $this->dbSslPath = Config::get('DB_SSL_PATH');
     }
 
     /**
@@ -190,8 +191,8 @@ class MySqlConfigurator
     private function injectReplicationSQL(string $replicaJail, string $snapshotName, MetaInfo $meta): void
     {
         // Get MySQL replication credentials from config
-        $masterUser = \Config::get('MASTER_DB_USER');
-        $masterPassword = \Config::get('MASTER_DB_PASSWORD');
+        $masterUser = Config::get('MASTER_DB_USER');
+        $masterPassword = Config::get('MASTER_DB_PASSWORD');
 
         // Compose the full SQL script to configure replication     
         $sql = <<<EOD
@@ -216,7 +217,7 @@ class MySqlConfigurator
         file_put_contents($tempSqlFile, $sql);
 
         // Build the MySQL execution command
-        $mysqlBinPath = \Config::get('MYSQL_BIN_PATH');
+        $mysqlBinPath = Config::get('MYSQL_BIN_PATH');
         $command = "{$mysqlBinPath} < {$tempSqlFile}";
 
         // Run the SQL inside the jail

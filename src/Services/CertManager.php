@@ -3,6 +3,7 @@
 namespace Monsefrachid\MysqlReplication\Services;
 
 use Monsefrachid\MysqlReplication\Support\ShellRunner;
+use Monsefrachid\MysqlReplication\Support\Config;
 use Monsefrachid\MysqlReplication\Contracts\JailDriverInterface;
 
 /**
@@ -57,7 +58,7 @@ class CertManager
     {
         // Determine target path inside the replica jail for MySQL SSL certificates
         $replicaRoot = $this->jailDriver->getJailsMountPath() . "/{$replicaJail}/root";
-        $certTarget = "{$replicaRoot}" . \Config::get('DB_SSL_PATH');
+        $certTarget = "{$replicaRoot}" . Config::get('DB_SSL_PATH');
 
         // Step 1: Secure copy certs from remote jail's /tmp to local /tmp
         $this->shell->run(
@@ -107,10 +108,10 @@ class CertManager
     {
         // Construct the replica jail's root and target certificate path
         $replicaRoot = $this->jailDriver->getJailsMountPath() . "/{$replicaJail}/root";
-        $certTarget = "{$replicaRoot}" . \Config::get('DB_SSL_PATH');
+        $certTarget = "{$replicaRoot}" . Config::get('DB_SSL_PATH');
 
         // Define the path on the host where SSL certs are stored
-        $localSourcePath = \Config::get('MYSQL_SSL_CERTS_PATH');
+        $localSourcePath = Config::get('MYSQL_SSL_CERTS_PATH');
 
         // Step 1: Ensure the target directory inside the jail exists
         $this->shell->run(

@@ -2,11 +2,14 @@
 <?php
 
 require_once __DIR__ . '/vendor/autoload.php';
-require_once __DIR__ . '/Config.php';
 
-Config::load(__DIR__); // Lo
-
+use Monsefrachid\MysqlReplication\Support\Config;
+//use Monsefrachid\MysqlReplication\Support\Logger;
 use Monsefrachid\MysqlReplication\Core\ReplicatorFactory;
+
+Config::load(__DIR__);
+
+//Logger::load(__DIR__ . '/../logs', $snapshotName);
 
 // Parse CLI arguments
 $options = getopt("", [
@@ -31,13 +34,6 @@ if (!isset($options['from'], $options['to'])) {
 
     exit(1);
 }
-
-// $from = $options['from'];
-// $to = $options['to'];
-// $force = isset($options['force']);
-// $dryRun = isset($options['dry-run']);
-// $skipTest = isset($options['skip-test']);
-// $sshKey = '-i ~/.ssh/id_digitalocean';
 
 // Use factory to create the correct replicator subclass
 $replicator = ReplicatorFactory::create($options);
