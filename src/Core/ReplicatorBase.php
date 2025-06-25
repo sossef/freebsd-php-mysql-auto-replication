@@ -314,6 +314,11 @@ abstract class ReplicatorBase
      */
     protected function loadMetaData(string $snapshotName): void
     {
+        if ($this->shell->isDryRun()) {
+            $this->logDryRun("Skipping loadMetaData for snapshot: {$snapshotName}");
+            return;
+        }
+        
         // Get the directory path where .meta files are stored (via jail driver abstraction)
         $snapshotBackupPath = $this->jailDriver->getSnapshotBackupDir();
 
