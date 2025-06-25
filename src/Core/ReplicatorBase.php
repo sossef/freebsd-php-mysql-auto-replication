@@ -315,7 +315,16 @@ abstract class ReplicatorBase
     protected function loadMetaData(string $snapshotName): void
     {
         if ($this->shell->isDryRun()) {
-            $this->logDryRun("Skipping loadMetaData for snapshot: {$snapshotName}");
+            $this->logDryRun("Skipping metadata file read — using fake MetaInfo object");
+
+            // Create a dummy/fake MetaInfo for simulation
+            $this->meta = new MetaInfo(
+                'mysql-bin.000001',  // fake binlog file
+                123456,              // fake position
+                '127.0.0.1',         // fake host IP
+                'mysql_jail_primary'// fake jail name
+            );
+
             return;
         }
         
