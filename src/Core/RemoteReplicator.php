@@ -24,7 +24,7 @@ class RemoteReplicator extends ReplicatorBase
         // Generate a unique timestamped snapshot suffix
         $snapshotSuffix = date('YmdHis');
 
-        // Create the remote snapshot and store .zfs and .meta files under sanpshot backup folder
+        // Create the remote snapshot and store .zfs and .meta files under snapshot backup folder
         $snapshot = $this->zfs->createRemoteSnapshot(
             $this->from,
             $this->sourceJail,

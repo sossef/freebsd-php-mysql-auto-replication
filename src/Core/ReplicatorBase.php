@@ -6,9 +6,9 @@ use Monsefrachid\MysqlReplication\Support\ShellRunner;
 use Monsefrachid\MysqlReplication\Support\MetaInfo;
 use Monsefrachid\MysqlReplication\Support\Logger;
 use Monsefrachid\MysqlReplication\Support\LoggerTrait;
+use Monsefrachid\MysqlReplication\Contracts\JailDriverInterface;
 use Monsefrachid\MysqlReplication\Services\ZfsSnapshotManager;
 use Monsefrachid\MysqlReplication\Services\JailManager;
-use Monsefrachid\MysqlReplication\Contracts\JailDriverInterface;
 use Monsefrachid\MysqlReplication\Services\IocageJailDriver;
 use Monsefrachid\MysqlReplication\Services\JailConfigurator;
 use Monsefrachid\MysqlReplication\Services\CertManager;
@@ -288,9 +288,9 @@ abstract class ReplicatorBase
         );
 
         if ($checkPassed) {            
-            $this->logSuccess("✅ Replica setup complete and replication initialized. See report in logs/" . $this->getLogFileName());                   
+            $this->logSuccess("✅ Replica setup complete and replication initialized.\n");                   
         } else {
-            $this->logError("Replica setup complete but replica status check failed.");
+            $this->logError("Replica setup complete but replica status check failed.\n");
         }
 
         $this->logInfo("See report in logs/" . $this->getLogFileName() . "\n");

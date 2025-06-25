@@ -107,6 +107,11 @@ class Logger
         }
     }
 
+    /**
+     * Returns the full path or name of the current log file in use.
+     *
+     * @return string The log file name.
+     */
     public function getLogFileName(): string
     {
         return $this->logFileName;

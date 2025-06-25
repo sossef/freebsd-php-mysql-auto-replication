@@ -74,52 +74,80 @@ class MySqlConfigurator
     */
     public function configure(string $replicaJail, string $snapshotName, MetaInfo $meta): void
     {
+        // Determine the root path of the replica jail's filesystem.
         $replicaRoot = $this->jailDriver->getJailsMountPath() . "/{$replicaJail}/root";
+
+         // Path to the MySQL configuration file inside the jail.
         $mycnfPath = "{$replicaRoot}/usr/local/etc/mysql/my.cnf";
 
+         // Modify the my.cnf file to ensure server-id and other replication settings are in place.
         $this->updateMyCnf($mycnfPath);
+
+        // Restart MySQL in the replica jail with a new UUID to avoid conflicts with the primary.
         $this->restartMySQLWithNewUUID($replicaJail);
+
+        // Inject the CHANGE MASTER TO ... SQL statement using the provided snapshot metadata.
         $this->injectReplicationSQL($replicaJail, $snapshotName, $meta);
     }
 
+    /**
+     * Updates the replica's my.cnf file to configure replication-specific settings.
+     *
+     * Modifies server-id, sets SSL certificate paths, and ensures the [mysqld] section and relay-log
+     * directive are present. Skips modification if running in dry-run mode.
+     *
+     * @param string $mycnfPath Full path to the MySQL configuration file inside the replica jail.
+     */
     private function updateMyCnf(string $mycnfPath): void
     {
+        // If dry-run mode is enabled, skip actual file modification and log the operation.
         if ($this->shell->isDryRun()) {
             $this->logDryRun("Skipping file read/write for {$mycnfPath}");
             return;
         }
 
+        // Read the contents of my.cnf; throw error if reading fails.
         $content = file_get_contents($mycnfPath);
         if ($content === false) {
             throw new RuntimeException("Failed to read my.cnf at {$mycnfPath}");
         }
 
-        // Ensure [mysqld] section exists
+        // Ensure the [mysqld] section header exists, adding it if missing.
         if (!preg_match('/^\[mysqld\]/m', $content)) {
             $content = "[mysqld]\n" . $content;
         }
 
-        // Set or replace the server-id
+        // Replace existing server-id with a newly generated one, or append it if not present.
         if (preg_match('/server-id\s*=\s*\d+/i', $content)) {
             $content = preg_replace('/server-id\s*=\s*\d+/i', 'server-id=' . $this->generateServerId(), $content);
         } else {
             $content .= "\nserver-id=" . $this->generateServerId();
         }
 
-        // Set SSL cert and key paths
+        // Update SSL certificate and key paths using values from the configured dbSslPath.
         $content = preg_replace('/ssl-cert\s*=.*/i', "ssl-cert={$this->dbSslPath}/client-cert.pem", $content);
         $content = preg_replace('/ssl-key\s*=.*/i', "ssl-key={$this->dbSslPath}/client-key.pem", $content);
 
-        // Add relay-log if missing
+        /// Add a relay-log directive if it's not already defined.
         if (!preg_match('/relay-log\s*=/i', $content)) {
             $content .= "\nrelay-log=relay-log";
         }
 
+        // Write the modified configuration back to the my.cnf file.
         file_put_contents($mycnfPath, $content);
     }
 
+    /**
+     * Restarts the MySQL service inside the replica jail with a new server UUID.
+     *
+     * This is necessary to avoid UUID conflicts with the primary server, since the replica is
+     * restored from a snapshot and may share the same UUID in `auto.cnf`.
+     *
+     * @param string $replicaJail The name of the replica jail.
+     */
     private function restartMySQLWithNewUUID(string $replicaJail): void
     {
+        // Stop the MySQL service in the replica jail.
         $this->jailDriver->runService(
             $replicaJail,
             'mysql-server',
@@ -127,12 +155,14 @@ class MySqlConfigurator
             'Stop MySQL in replica jail'
         );
 
+        // Delete the auto.cnf file to force MySQL to generate a new server UUID on next start.
         $this->jailDriver->exec(
             $replicaJail,
             'rm -f /var/db/mysql/auto.cnf',
             'Delete auto.cnf to regenerate server UUID'
         );
 
+        // Start the MySQL service again, which will regenerate auto.cnf with a unique UUID.
         $this->jailDriver->runService(
             $replicaJail,
             'mysql-server',
