@@ -58,6 +58,11 @@ class RemoteReplicator extends ReplicatorBase
      */
     protected function transferCertificates(): void
     {
+        if ($this->shell->isDryRun()) {
+            $this->logDryRun("Skipping...");
+            return;
+        }
+
         $this->certsManager->transferCerts($this->from, $this->sourceJail, $this->replicaJail);
     }
 }

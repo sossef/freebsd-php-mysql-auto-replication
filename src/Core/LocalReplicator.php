@@ -42,6 +42,11 @@ class LocalReplicator extends ReplicatorBase
      */
     protected function transferCertificates(): void
     {
+        if ($this->shell->isDryRun()) {
+            $this->logDryRun("Skipping...");
+            return;
+        }
+        
         $this->certsManager->transferCertsFromLocal($this->replicaJail);
     }
 }
