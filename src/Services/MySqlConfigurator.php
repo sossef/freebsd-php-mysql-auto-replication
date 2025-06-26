@@ -109,7 +109,9 @@ class MySqlConfigurator
         // Read the contents of my.cnf; throw error if reading fails.
         $content = file_get_contents($mycnfPath);
         if ($content === false) {
-            throw new RuntimeException("Failed to read my.cnf at {$mycnfPath}");
+            //throw new RuntimeException("Failed to read my.cnf at {$mycnfPath}");
+            $this->logError("Failed to read my.cnf at {$mycnfPath}");
+            exit(1);
         }
 
         // Ensure the [mysqld] section header exists, adding it if missing.
@@ -205,7 +207,9 @@ class MySqlConfigurator
         }
 
         // All IDs in range are taken — abort
-        throw new RuntimeException("No available server-id between 2–99");
+        //throw new RuntimeException("No available server-id between 2–99");
+        $this->logError("No available server-id between 2–99");
+        exit(1);
     }
 
     /**

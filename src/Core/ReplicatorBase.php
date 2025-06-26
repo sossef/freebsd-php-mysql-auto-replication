@@ -336,15 +336,19 @@ abstract class ReplicatorBase
 
         // Validate the metadata file exists
         if (!file_exists($metaPath)) {
-            throw new \RuntimeException("Meta file not found at: {$metaPath}");
+            //throw new \RuntimeException("Meta file not found at: {$metaPath}");
+            $this->logError("Meta file not found at: {$metaPath}");
+            exit(1);
         }
 
         // Read file into array of lines, skipping empty lines
         $lines = file($metaPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
 
         // Validate the file contains at least the required lines
-        if (count($lines) < 3) {
-            throw new \RuntimeException("Meta file must contain at least 3 lines (log file, log position, and primary IP).");
+        if (count($lines) < 4) {
+            //throw new \RuntimeException("Meta file must contain at least 3 lines (log file, log position, and primary IP).");
+            $this->logError("Meta file must contain at least 4 lines (log file, log position, primary IP, and primary jail name).");
+            exit(1);
         }
 
         // Extract values from lines

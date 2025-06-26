@@ -122,7 +122,10 @@ class ZfsSnapshotManager
 
             // Validate output
             if (count($lines) < 1 || !str_contains($lines[0], "\t")) {
-                throw new \RuntimeException("Unexpected output when fetching master status:\n{$output}");
+                $this->logError("Failed to fetch MySQL master status from remote jail '{$jailName}' on host '{$remote}'.");
+                $this->logError("Raw SSH output:\n" . trim($output));
+                $this->logError("Aborting replication setup due to critical failure.");
+                exit(1);
             }
 
             // Extract binlog file and position
@@ -270,7 +273,9 @@ class ZfsSnapshotManager
 
         // Check for existence of both required files
         if (!file_exists("{$base}.zfs") || !file_exists("{$base}.meta")) {
-            throw new RuntimeException("❌ Local snapshot verification failed: missing .zfs or .meta for '{$snapshotName}'");
+            //throw new RuntimeException("❌ Local snapshot verification failed: missing .zfs or .meta for '{$snapshotName}'");
+            $this->logError("Local snapshot verification failed: missing .zfs or .meta for '{$snapshotName}'");
+            exit(1);
         }
         
         $this->logSuccess("Local snapshot and metadata verified for '{$snapshotName}'");
@@ -304,8 +309,10 @@ class ZfsSnapshotManager
                 "Create remote ZFS snapshot: {$snapshot}"
             );
         } catch (\Throwable $e) {
-            $errorMessage = "❌ Failed to create remote snapshot '{$snapshot}' on host '{$remote}': " . $e->getMessage();            
-            throw new \RuntimeException($errorMessage, 0, $e);
+            // $errorMessage = "❌ Failed to create remote snapshot '{$snapshot}' on host '{$remote}': " . $e->getMessage();            
+            // throw new \RuntimeException($errorMessage, 0, $e);
+            $this->logError("Failed to create remote snapshot '{$snapshot}' on host '{$remote}': " . $e->getMessage());
+            exit(1);
         }
 
         return $snapshot;
@@ -329,8 +336,10 @@ class ZfsSnapshotManager
                 "Verify remote snapshot exists"
             );
         } catch (\Throwable $e) {
-            $errorMessage = "❌ Remote snapshot with suffix '{$snapshotSuffix}' not found or verification failed on host '{$remote}': " . $e->getMessage();
-            throw new \RuntimeException($errorMessage, 0, $e);
+            // $errorMessage = "❌ Remote snapshot with suffix '{$snapshotSuffix}' not found or verification failed on host '{$remote}': " . $e->getMessage();
+            // throw new \RuntimeException($errorMessage, 0, $e);
+            $this->logError("Remote snapshot with suffix '{$snapshotSuffix}' not found or verification failed on host '{$remote}': " . $e->getMessage());
+            exit(1);
         }
     }
 
@@ -357,9 +366,11 @@ class ZfsSnapshotManager
                 "Failed to ZFS receive replica"
             );
         } catch (\Throwable $e) {
-            $errorMessage = "❌ Snapshot stream from remote '{$remote}' failed for jail '{$targetJailName}': " . $e->getMessage();
-            error_log($errorMessage);
-            throw new \RuntimeException($errorMessage, 0, $e);
+            // $errorMessage = "❌ Snapshot stream from remote '{$remote}' failed for jail '{$targetJailName}': " . $e->getMessage();
+            // error_log($errorMessage);
+            // throw new \RuntimeException($errorMessage, 0, $e);
+            $this->logError("Snapshot stream from remote '{$remote}' failed for jail '{$targetJailName}': " . $e->getMessage());
+            exit(1);
         }
     }
 }

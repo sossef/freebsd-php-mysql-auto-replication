@@ -101,7 +101,7 @@ class IocageJailDriver implements JailDriverInterface
 
         if (!is_dir($rootPath)) {
             $this->logError("Jail root '{$rootPath}' does not exist after snapshot transfer.");
-            throw new RuntimeException("❌ Jail root '{$rootPath}' does not exist after snapshot transfer.");
+            //throw new RuntimeException("❌ Jail root '{$rootPath}' does not exist after snapshot transfer.");
         }
     }
 

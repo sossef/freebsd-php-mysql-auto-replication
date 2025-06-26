@@ -66,8 +66,10 @@ class ShellRunner
         // If the command failed (non-zero exit), throw an exception with a helpful message
         if ($exitCode !== 0) {
             $message = $onError ?: "Command failed: {$cmd}";
-            $this->logError($message);
-            throw new RuntimeException("❌ [ERROR] {$message}");
+            // $this->logError($message);
+            // throw new RuntimeException("❌ [ERROR] {$message}");
+            $this->logError("{$message}");
+            exit(1);
         }
 
         // Return the output lines from the command

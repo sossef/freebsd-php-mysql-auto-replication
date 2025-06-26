@@ -108,7 +108,9 @@ class ReplicationVerifier
 
         // Confirm the replicated row exists in replica
         if (!str_contains($check ?? '', 'replication check')) {
-            throw new RuntimeException("❌ Replication test failed. Test row not found in replica.");
+            //throw new RuntimeException("❌ Replication test failed. Test row not found in replica.");
+            $this->logError("Replication test failed. Test row not found in replica.");
+            exit(1);
         }
 
         echo "\n✅ End-to-end replication test passed.\n";

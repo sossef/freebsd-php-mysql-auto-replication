@@ -58,7 +58,9 @@ class JailConfigurator
 
         // Ensure the config file exists
         if (!file_exists($configPath)) {
-            throw new RuntimeException("Jail config not found: {$configPath}");
+            //throw new RuntimeException("Jail config not found: {$configPath}");
+            $this->logError("Jail config not found: {$configPath}");
+            exit(1);
         }
 
         // Read and decode the JSON config
@@ -66,7 +68,9 @@ class JailConfigurator
 
         // Validate JSON parsing
         if (!is_array($config)) {
-            throw new RuntimeException("Invalid jail config JSON: {$configPath}");
+            //throw new RuntimeException("Invalid jail config JSON: {$configPath}");
+            $this->logError("Invalid jail config JSON: {$configPath}");
+            exit(1);
         }
 
         // Apply jail settings
@@ -130,7 +134,9 @@ class JailConfigurator
         }
 
         // All IPs are used
-        throw new RuntimeException('No available IP in 10.0.0.X range.');
+        //throw new RuntimeException('No available IP in 10.0.0.X range.');
+        $this->logError("No available IP in 10.0.0.X range.");
+        exit(1);
     }
 
 }
